@@ -9,7 +9,7 @@ class DebianDependencyConan(ConanFile):
     homepage = "https://packages.ubuntu.com/xenial-updates/libuuid1"
     # dev_url = https://packages.ubuntu.com/xenial-updates/uuid-dev
     description = "The libuuid library generates and parses 128-bit Universally Unique IDs (UUIDs). A UUID is an identifier that is unique within the space of all such identifiers across both space and time. It can be used for multiple purposes, from tagging objects with an extremely short lifetime to reliably identifying very persistent objects across a network."
-    url = "https://github.com/totemic/conan-debian-packages/libuuid1"    
+    url = "https://github.com/totemic/conan-package-recipes/libuuid1"    
     license = "BSD-3-clause"
     settings = "os", "arch"
 

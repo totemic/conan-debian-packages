@@ -9,7 +9,7 @@ class DebianDependencyConan(ConanFile):
     homepage = "https://packages.debian.org/buster/libasound2"
     # dev_url = https://packages.debian.org/buster/libasound2-dev
     description = "shared library for ALSA applications -- development files. This package contains files required for developing software that makes use of libasound2, the ALSA library."
-    url = "https://github.com/totemic/conan-debian-packages/libasound2"    
+    url = "https://github.com/totemic/conan-package-recipes/libasound2"    
     license = "GNU Lesser General Public License"
     settings = "os", "arch"
 
