@@ -1,6 +1,12 @@
+import os
 from conans import AutoToolsBuildEnvironment, CMake, ConanFile, tools
 from conans.errors import ConanInvalidConfiguration
-import os
+try:
+    # we can only use this file when running conan install. When exporting this recipe, the file does not yet exist
+    # since it's in a different location and conan fails. In order to handle this, we need to catch this here
+    from debiantools import copy_cleaned, download_extract_deb, translate_arch, triplet_name
+except ImportError:
+    pass 
 
 
 class Mpg123Conan(ConanFile):
@@ -58,6 +64,7 @@ class Mpg123Conan(ConanFile):
         "seektable": "1000",
         "module": "coreaudio",
     }
+    exports = ["../debiantools.py"]
     exports_sources = "CMakeLists.txt", "patches/**"
     generators = "cmake", "pkg_config", "cmake_find_package"
 
@@ -162,36 +169,6 @@ class Mpg123Conan(ConanFile):
         self._cmake.configure()
         return self._cmake
 
-    def translate_arch(self):
-        arch_names = {"x86_64": "amd64",
-                        "x86": "i386",
-                        "ppc32": "powerpc",
-                        "ppc64le": "ppc64el",
-                        "armv7": "arm",
-                        "armv7hf": "armhf",
-                        "armv8": "arm64",
-                        "s390x": "s390x"}
-        return arch_names[str(self.settings.arch)]
-        
-    def _download_extract_deb(self, url, sha256):
-        filename = "./download.deb"
-        deb_data_file = "data.tar.xz"
-        tools.download(url, filename)
-        tools.check_sha256(filename, sha256)
-        # extract the payload from the debian file
-        self.run("ar -x %s %s" % (filename, deb_data_file))
-        os.unlink(filename)
-        tools.unzip(deb_data_file)
-        os.unlink(deb_data_file)
-
-    def triplet_name(self):
-        # we only need the autotool class to generate the host variable
-        autotools = AutoToolsBuildEnvironment(self)
-
-        # construct path using platform name, e.g. usr/lib/arm-linux-gnueabihf/pkgconfig
-        # if not cross-compiling it will be false. In that case, construct the name by hand
-        return autotools.host or get_gnu_triplet(str(self.settings.os), str(self.settings.arch), self.settings.get_safe("compiler"))
-
     def build(self):
         if self.settings.os == "Linux":
             if self.settings.arch == "x86_64":
@@ -209,8 +186,8 @@ class Mpg123Conan(ConanFile):
                 sha_out = "4cb138ec6e20cf66857c2ca69c3914b4c9e74fc8287271fd741608af421528eb"
                 # https://packages.debian.org/buster/arm64/libmpg123-dev/download
                 sha_dev = "4b5312bc0a8f3a1cb765ff8f3d3d1af1fddcaf05aa723314fbc0277ba6ea43ff"
-            else: # armv7hf
-                raise Exception("Add urls paths for specified linux architecture")
+            else:
+                raise Exception("Todo: add binary urls for this architecture")
 
             #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-0_1.25.10-2_amd64.deb
             #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-0_1.25.10-2_arm64.deb
@@ -219,15 +196,15 @@ class Mpg123Conan(ConanFile):
             #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-dev_1.25.10-2_amd64.deb
             #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-dev_1.25.10-2_arm64.deb
             url_lib = ("http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-0_%s-%s_%s.deb"
-                % (str(self.version), self.debian_build_version, self.translate_arch()))
+                % (str(self.version), self.debian_build_version, translate_arch(self)))
             url_out = ("http://ftp.us.debian.org/debian/pool/main/m/mpg123/libout123-0_%s-%s_%s.deb"
-                % (str(self.version), self.debian_build_version, self.translate_arch()))
+                % (str(self.version), self.debian_build_version, translate_arch(self)))
             url_dev = ("http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-dev_%s-%s_%s.deb"
-                % (str(self.version), self.debian_build_version, self.translate_arch()))
+                % (str(self.version), self.debian_build_version, translate_arch(self)))
 
-            self._download_extract_deb(url_lib, sha_lib)
-            self._download_extract_deb(url_out, sha_out)
-            self._download_extract_deb(url_dev, sha_dev)
+            download_extract_deb(self, url_lib, sha_lib)
+            download_extract_deb(self, url_out, sha_out)
+            download_extract_deb(self, url_dev, sha_dev)
 
         else:
             for patch in self.conan_data.get("patches", {}).get(self.version, []):
@@ -241,7 +218,7 @@ class Mpg123Conan(ConanFile):
 
     def package(self):
         if self.settings.os == "Linux":
-            self.copy(pattern="*", dst="lib", src="usr/lib/" + self.triplet_name(), symlinks=True)
+            self.copy(pattern="*", dst="lib", src="usr/lib/" + triplet_name(self), symlinks=True)
             self.copy(pattern="*", dst="include", src="usr/include", symlinks=True)
             self.copy(pattern="copyright", src="usr/share/doc/" + self.name, symlinks=True)
         else:

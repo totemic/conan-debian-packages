@@ -1,5 +1,5 @@
 import os
-from conans import ConanFile, AutoToolsBuildEnvironment, tools
+from conans import ConanFile, tools
 try:
     # we can only use this file when running conan install. When exporting this recipe, the file does not yet exist
     # since it's in a different location and conan fails. In order to handle this, we need to catch this here
@@ -33,7 +33,7 @@ class DebianDependencyConan(ConanFile):
                 # https://packages.debian.org/buster/arm64/libpulse-dev/download
                 sha_dev = "ada3da8f3245ce82fda28f2ef494029213c8a4acb16bf66bb9c6664138749182"
             else:
-                raise Exception("Todo: add binary urls for these architecture")
+                raise Exception("Todo: add binary urls for this architecture")
 
             url_lib = ("http://ftp.debian.org/debian/pool/main/p/pulseaudio/libpulse0_%s-%s_%s.deb"
                 % (str(self.version), self.build_version, translate_arch(self)))

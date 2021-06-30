@@ -4,14 +4,16 @@ from conans import AutoToolsBuildEnvironment, CMake, ConanFile, tools
 from conans.client.tools.oss import get_gnu_triplet
 
 def translate_arch(conanfile: ConanFile) -> str:
-    arch_names = {"x86_64": "amd64",
-                    "x86": "i386",
-                    "ppc32": "powerpc",
-                    "ppc64le": "ppc64el",
-                    "armv7": "arm",
-                    "armv7hf": "armhf",
-                    "armv8": "arm64",
-                    "s390x": "s390x"}
+    arch_names = {
+        "x86_64": "amd64",
+        "x86": "i386",
+        "ppc32": "powerpc",
+        "ppc64le": "ppc64el",
+        "armv7": "arm",
+        "armv7hf": "armhf",
+        "armv8": "arm64",
+        "s390x": "s390x"
+    }
     return arch_names[str(conanfile.settings.arch)]
     
 def download_extract_deb(conanfile: ConanFile, url: str, sha256: str) -> None:
@@ -25,9 +27,12 @@ def download_extract_deb(conanfile: ConanFile, url: str, sha256: str) -> None:
     tools.unzip(deb_data_file)
     os.unlink(deb_data_file)
 
-def triplet_name(conanfile: ConanFile) -> str:
+def triplet_name(conanfile: ConanFile, force_linux: bool=False) -> str:
     # we only need the autotool class to generate the host variable
     autotools = AutoToolsBuildEnvironment(conanfile)
+
+    if force_linux:
+        return get_gnu_triplet("Linux", str(conanfile.settings.arch), "gnu")
 
     # construct path using platform name, e.g. usr/lib/arm-linux-gnueabihf/pkgconfig
     # if not cross-compiling it will be false. In that case, construct the name by hand
