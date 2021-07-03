@@ -1,6 +1,11 @@
 import os
-from conans import ConanFile, AutoToolsBuildEnvironment, tools
-from conans.client.tools.oss import get_gnu_triplet
+from conans import ConanFile, tools
+try:
+    # we can only use this file when running conan install. When exporting this recipe, the file does not yet exist
+    # since it's in a different location and conan fails. In order to handle this, we need to catch this here
+    from debiantools import copy_cleaned, download_extract_deb, translate_arch, triplet_name
+except ImportError:
+    pass 
 
 class DebianDependencyConan(ConanFile):
     name = "libsystemd0"
@@ -12,6 +17,7 @@ class DebianDependencyConan(ConanFile):
     url = "https://github.com/totemic/conan-package-recipes/libsystemd0"    
     license = "LGPL"
     settings = "os", "arch"
+    exports = ["../debiantools.py"]
 
     def requirements(self):
         if self.settings.os == "Linux":
@@ -19,36 +25,6 @@ class DebianDependencyConan(ConanFile):
             # right now this is handled by telling the linker to ignore unknown symbols in secondary dependencies
             self.requires("libudev1/237@totemic/stable")
 
-    def translate_arch(self):
-        arch_string = str(self.settings.arch)
-        # ubuntu does not have v7 specific libraries
-        if (arch_string) == "armv7hf":
-            return "armhf"
-        elif (arch_string) == "armv8":
-            return "arm64"
-        elif (arch_string) == "x86_64":
-            return "amd64"
-        return arch_string
-        
-    def _download_extract_deb(self, url, sha256):
-        filename = "./download.deb"
-        deb_data_file = "data.tar.xz"
-        tools.download(url, filename)
-        tools.check_sha256(filename, sha256)
-        # extract the payload from the debian file
-        self.run("ar -x %s %s" % (filename, deb_data_file))
-        os.unlink(filename)
-        tools.unzip(deb_data_file)
-        os.unlink(deb_data_file)
-
-    def triplet_name(self):
-        # we only need the autotool class to generate the host variable
-        autotools = AutoToolsBuildEnvironment(self)
-
-        # construct path using platform name, e.g. usr/lib/arm-linux-gnueabihf/pkgconfig
-        # if not cross-compiling it will be false. In that case, construct the name by hand
-        return autotools.host or get_gnu_triplet(str(self.settings.os), str(self.settings.arch), self.settings.get_safe("compiler"))
-        
     def build(self):
         if self.settings.os == "Linux":
             if self.settings.arch == "x86_64":
@@ -58,9 +34,9 @@ class DebianDependencyConan(ConanFile):
                 sha_dev = "32f1f3f917c5f0d7b53e4bfb1f1087159e365d89405ec85acf0bd43dee0fbac0"
 
                 url_lib = ("http://us.archive.ubuntu.com/ubuntu/pool/main/s/systemd/libsystemd0_%s-%s_%s.deb"
-                   % (str(self.version), self.build_version, self.translate_arch()))
+                   % (str(self.version), self.build_version, translate_arch(self)))
                 url_dev = ("http://us.archive.ubuntu.com/ubuntu/pool/main/s/systemd/libsystemd-dev_%s-%s_%s.deb"
-                   % (str(self.version), self.build_version, self.translate_arch()))
+                   % (str(self.version), self.build_version, translate_arch(self)))
             elif self.settings.arch == "armv8":
                 # https://packages.ubuntu.com/bionic-updates/arm64/libsystemd0/download
                 sha_lib = "2ec53633f7ad8998159ac65da5a7dbd545abdf6e250382c0a70d8be6dbe74185"
@@ -68,23 +44,16 @@ class DebianDependencyConan(ConanFile):
                 sha_dev = "2c3c39e385b61826862dac7f5f480fa925810d41666acc0c29b0ff58c13c0aa1"
 
                 url_lib = ("http://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/libsystemd0_%s-%s_%s.deb"
-                   % (str(self.version), self.build_version, self.translate_arch()))
+                   % (str(self.version), self.build_version, translate_arch(self)))
                 url_dev = ("http://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/libsystemd-dev_%s-%s_%s.deb"
-                   % (str(self.version), self.build_version, self.translate_arch()))
-            else: # armv7hf
-                # https://packages.ubuntu.com/bionic-updates/armhf/libsystemd0/download
-                sha_lib = "e5f18ce43d7096a19f24220950031cdf0b2e64dbd2aebb8019766d70195f872a"
-                # https://packages.ubuntu.com/bionic-updates/armhf/libsystemd-dev/download
-                sha_dev = "b364f540067e25bf63332b61a920951d33cc0ff8d2d868ccdd8067618299b9f8"
+                   % (str(self.version), self.build_version, translate_arch(self)))
+            else:
+                raise Exception("Todo: add binary urls for this architecture")
 
-                url_lib = ("http://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/libsystemd0_%s-%s_%s.deb"
-                   % (str(self.version), self.build_version, self.translate_arch()))
-                url_dev = ("http://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/libsystemd-dev_%s-%s_%s.deb"
-                   % (str(self.version), self.build_version, self.translate_arch()))
-            self._download_extract_deb(url_lib, sha_lib)
-            self._download_extract_deb(url_dev, sha_dev)
+            download_extract_deb(self, url_lib, sha_lib)
+            download_extract_deb(self, url_dev, sha_dev)
             # remove libsystemd.so which is an absolute link to /lib/aarch64-linux-gnu/libsystemd.so.0.14.0
-            # libsystemd_so_path = "lib/%s/libsystemd.so" % self.triplet_name()
+            # libsystemd_so_path = "lib/%s/libsystemd.so" % triplet_name(self)
             # os.remove(libsystemd_so_path)
             # os.symlink("libsystemd.so.0.21.0", libsystemd_so_path)
         else:
@@ -93,8 +62,8 @@ class DebianDependencyConan(ConanFile):
             self.output.info("Nothing to be done for this OS")
 
     def package(self):
-        self.copy(pattern="*", dst="lib", src="lib/" + self.triplet_name(), symlinks=True)
-        self.copy(pattern="*", dst="lib", src="usr/lib/" + self.triplet_name(), symlinks=True)
+        self.copy(pattern="*", dst="lib", src="lib/" + triplet_name(self), symlinks=True)
+        self.copy(pattern="*", dst="lib", src="usr/lib/" + triplet_name(self), symlinks=True)
         self.copy(pattern="*", dst="include", src="usr/include", symlinks=True)
         self.copy(pattern="copyright", src="usr/share/doc/" + self.name, symlinks=True)
 
@@ -122,7 +91,7 @@ class DebianDependencyConan(ConanFile):
                 self.output.info("lib_paths %s" % self.cpp_info.lib_paths)
 
                 # exclude all libraries from dependencies here, they are separately included
-                self.copy_cleaned(pkg_config.libs_only_l, "-l", self.cpp_info.libs)
+                copy_cleaned(pkg_config.libs_only_l, "-l", self.cpp_info.libs)
                 self.output.info("libs: %s" % self.cpp_info.libs)
 
                 self.output.info("include_paths: %s" % self.cpp_info.include_paths)
