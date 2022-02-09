@@ -1,0 +1,4 @@
+sources:
+  "grouper":
+    url: "https://github.com/google-coral/libedgetpu/archive/refs/tags/release-grouper.tar.gz"
+    sha256: "86a6e654e093c204b4fb579a60773bfa080f095c9cbb3a2c114ca4a13e0b15eb"

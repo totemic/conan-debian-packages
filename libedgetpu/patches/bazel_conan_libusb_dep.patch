@@ -1,0 +1,28 @@
+diff --git a/workspace.bzl b/workspace.bzl
+index 16b8af8..13d57a8 100644
+--- a/workspace.bzl
++++ b/workspace.bzl
+@@ -117,13 +117,8 @@ cc_import(
+   visibility = ["//visibility:public"],
+ )
+ """
+-    elif lower_name.startswith("mac os x"):
+-        path = _brew_libusb_path(ctx)
+-        if not path:
+-            path = _port_libusb_path(ctx)
+-            if not path:
+-                fail("Install libusb using MacPorts or Homebrew.")
+-
++    elif lower_name.startswith("mac os x"):
++        path = ctx.os.environ["CONAN_LIBUSB_ROOT"]
+         build_file_content = """
+ cc_library(
+   name = "headers",
+@@ -145,6 +140,7 @@ cc_library(
+ 
+ libusb_repository = repository_rule(
+     implementation = _libusb_impl,
++    environ = ["CONAN_LIBUSB_ROOT"]
+ )
+ 
+ def _properties_impl(ctx):
