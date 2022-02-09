@@ -4,3 +4,8 @@ test_package/__pycache__/*
 test_package/build/*
 test_package/*.pyc
 *.pyc
+
+# Local step-by-step testing of recipes
+build/
+source/
+package/
