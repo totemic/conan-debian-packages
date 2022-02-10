@@ -5,7 +5,7 @@ from conans import ConanFile, tools, AutoToolsBuildEnvironment
 from conans.errors import ConanInvalidConfiguration
 
 
-class EdgeTpuConan(ConanFile):
+class LibEdgeTpuConan(ConanFile):
     name = "libedgetpu"
     description = "Source code for the userspace level runtime driver for Coral devices."
     license = "Apache-2.0"
