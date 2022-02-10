@@ -16,9 +16,6 @@ conan build . -bf build -sf source -pf package
 
 # Package headers, libs, binaries ...
 conan package . -bf build -sf source -pf package
-
-# Run package consumption test
-conan test test_package libedgetpu/<version>@totemic/stable
 ```
 you can then inspect the contents of the package by browsing the `package` folder.
 
