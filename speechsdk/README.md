@@ -1,6 +1,7 @@
 Conan recipe for Microsoft Speech SDK
 https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/
-
+Release notes:
+https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/releasenotes?tabs=speech-sdk
 
 Steps for integration:
 Get linux client SDK
@@ -20,3 +21,5 @@ https://repo1.maven.org/maven2/com/microsoft/cognitiveservices/speech/client-sdk
 https://search.maven.org/artifact/com.microsoft.cognitiveservices.speech/client-sdk
 https://search.maven.org/remotecontent?filepath=com/microsoft/cognitiveservices/speech/client-sdk/1.24.2/client-sdk-1.24.2.jar
 https://search.maven.org/remotecontent?filepath=com/microsoft/cognitiveservices/speech/client-sdk/1.24.2/client-sdk-1.24.2-sources.jar
+
+conan install SpeechSDK/1.25.0@totemic/stable -s os=Linux --build=SpeechSDK --build=libasound2

@@ -5,7 +5,7 @@ from conans.errors import ConanInvalidConfiguration
 
 class SpeechSDKConan(ConanFile):
     name = "SpeechSDK"
-    version = "1.24.2"
+    version = "1.25.0"
     description = "Microsoft Speech SDK library"
     homepage = "https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/"
     license = "Microsoft"
