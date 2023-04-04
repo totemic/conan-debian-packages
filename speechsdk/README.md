@@ -22,4 +22,6 @@ https://search.maven.org/artifact/com.microsoft.cognitiveservices.speech/client-
 https://search.maven.org/remotecontent?filepath=com/microsoft/cognitiveservices/speech/client-sdk/1.24.2/client-sdk-1.24.2.jar
 https://search.maven.org/remotecontent?filepath=com/microsoft/cognitiveservices/speech/client-sdk/1.24.2/client-sdk-1.24.2-sources.jar
 
+for code understanding: https://github.com/Microsoft/cognitive-services-speech-sdk-js
+
 conan install SpeechSDK/1.26.0@totemic/stable -s os=Linux --build=SpeechSDK --build=libasound2
