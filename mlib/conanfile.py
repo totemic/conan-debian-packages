@@ -5,7 +5,7 @@ from conans import ConanFile, AutoToolsBuildEnvironment, tools
 
 class MlibConan(ConanFile):
     name = "mlib"
-    version = "0.5.0" # commit from 2021.01.13
+    version = "0.7.0"
     source_subfolder = "mlib"
     scm = {
         "type": "git",
