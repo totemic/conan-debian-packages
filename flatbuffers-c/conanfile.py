@@ -4,7 +4,7 @@ from conans import ConanFile, CMake, tools
 
 class PahocConan(ConanFile):
     name = "flatbuffers-c"
-    version = "0.6.0"
+    version = "0.6.1"
     license = "Apache License 2.0"
     homepage = "https://github.com/dvidelabs/flatcc"
     description = "FlatBuffers Compiler and Library in C for C"
@@ -23,8 +23,7 @@ class PahocConan(ConanFile):
         "type": "git",
         #"subfolder": source_subfolder,
         "url": "https://github.com/dvidelabs/flatcc.git",
-        # latest commit, 2019.08.17, 
-        "revision": "571dc4100670b0df51f727dc6ab747a8851f4695"
+        "revision": "v" + version
     }
 
     def config_options(self):
@@ -38,6 +37,9 @@ class PahocConan(ConanFile):
         cmake.definitions["FLATCC_TEST"] = self.options.tests
         cmake.definitions["FLATCC_REFLECTION"] = self.options.reflection
         cmake.definitions["BUILD_SHARED_LIBS"] = self.options.shared
+        # TODO: this setting was needed since CLang generated a warning in v 0.6.1. 
+        # Check if this can be removed in future versions again 
+        cmake.definitions["FLATCC_ALLOW_WERROR"] = False
         #cmake.configure(source_folder=self._source_subfolder)
         cmake.configure()
         return cmake
