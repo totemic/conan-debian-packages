@@ -1,2 +1,2 @@
 # conan-debian-packages
-Conan.io package to integrate debian binary packages
+Conan.io package to integrate debian binary packages and others
