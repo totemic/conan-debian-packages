@@ -1,0 +1,236 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 40e1b72..f7730e8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -24,10 +24,11 @@
+ #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #
+-cmake_minimum_required(VERSION 2.6)
++cmake_minimum_required(VERSION 3.13)
+ 
+ project(NE10 C CXX ASM)
+ 
++option(NE10_BUILD_ARM_ONLY "Build for ARM only using optimized functions." OFF)
+ option(NE10_BUILD_SHARED "Build NE10 shared libraries" OFF)
+ option(NE10_BUILD_STATIC "Build NE10 static libraries" ON)
+ option(NE10_BUILD_EXAMPLES "Build NE10 examples" ON)
+@@ -94,6 +95,10 @@ option(NE10_ENABLE_IMGPROC "Build image processing functionalities to NE10" ON)
+ 
+ set(NE10_VERSION 10)
+ 
++if (NE10_BUILD_ARM_ONLY)
++    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DARM_ONLY")
++endif()
++
+ if(BUILD_DEBUG)
+     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -O0 -DDEBUG -g -Wall -Wno-unused-but-set-variable")
+     message("-- Building type: DEBUG")
+@@ -187,7 +192,7 @@ endif()
+ # Make sure we are compiling for an ARM system.
+ # This is a verbose fail-fast in case we are trying to compile for non-ARM;
+ # otherwise it would fail at `make` with obscure errors.
+-if(GNULINUX_PLATFORM AND (NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^arm"))
++if(False)
+     message(FATAL_ERROR "You are trying to compile for non-ARM (CMAKE_SYSTEM_PROCESSOR='${CMAKE_SYSTEM_PROCESSOR}')! see doc/building.md for cross compilation instructions.")
+ endif()
+ 
+diff --git a/modules/CMakeLists.txt b/modules/CMakeLists.txt
+index 4f158e9..243cead 100644
+--- a/modules/CMakeLists.txt
++++ b/modules/CMakeLists.txt
+@@ -365,11 +365,22 @@ include_directories (
+     ${PROJECT_SOURCE_DIR}/common
+ )
+ 
++set(EXPORTED_HEADERS
++        ../inc/NE10.h
++        ../inc/NE10_dsp.h
++        ../inc/NE10_imgproc.h
++        ../inc/NE10_init.h
++        ../inc/NE10_macros.h
++        ../inc/NE10_math.h
++        ../inc/NE10_physics.h
++        ../inc/NE10_types.h
++        )
++
+ if(NE10_BUILD_STATIC OR ANDROID_PLATFORM OR IOS_DEMO)
+     add_library( NE10 STATIC
+         ${NE10_C_SRCS}
+-        ${NE10_INTRINSIC_SRCS}
+-        ${NE10_NEON_SRCS}
++        $<$<BOOL:${NE10_BUILD_ARM_ONLY}>:${NE10_INTRINSIC_SRCS}>
++        $<$<BOOL:${NE10_BUILD_ARM_ONLY}>:${NE10_NEON_SRCS}>
+         ${NE10_INIT_SRCS}
+     )
+     set_target_properties(NE10 PROPERTIES
+@@ -381,6 +392,15 @@ if(NE10_BUILD_STATIC OR ANDROID_PLATFORM OR IOS_DEMO)
+         LINKER_LANGUAGE C
+     )
+ 
++    set_target_properties(NE10 PROPERTIES PUBLIC_HEADER "${EXPORTED_HEADERS}")
++
++    install(TARGETS NE10
++            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ne10
++            COMPONENT library
++            )
++
+   if(IOS_DEMO)
+     install(TARGETS NE10
+       DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../ios/NE10Demo/libs/)
+@@ -391,13 +411,15 @@ if(NE10_BUILD_SHARED)
+ 
+     add_library( NE10_shared SHARED
+         ${NE10_C_SRCS}
+-        ${NE10_INTRINSIC_SRCS}
+-        ${NE10_NEON_SRCS}
++        $<$<BOOL:${NE10_BUILD_ARM_ONLY}>:${NE10_INTRINSIC_SRCS}>
++        $<$<BOOL:${NE10_BUILD_ARM_ONLY}>:${NE10_NEON_SRCS}>
+         ${NE10_INIT_SRCS}
+     )
+ 
+     target_link_libraries(NE10_shared m)
+ 
++    set_target_properties(NE10_shared PROPERTIES PUBLIC_HEADER "${EXPORTED_HEADERS}")
++
+     set_target_properties(NE10_shared PROPERTIES
+         OUTPUT_NAME "NE10"
+         CLEAN_DIRECT_OUTPUT 1
+@@ -405,10 +427,17 @@ if(NE10_BUILD_SHARED)
+         LINKER_LANGUAGE C
+     )
+ 
++    install(TARGETS NE10_shared
++            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ne10
++            COMPONENT library
++            )
++
+     add_library( NE10_test SHARED
+         ${NE10_C_SRCS}
+-        ${NE10_INTRINSIC_SRCS}
+-        ${NE10_NEON_SRCS}
++        $<$<BOOL:${NE10_BUILD_ARM_ONLY}>:${NE10_INTRINSIC_SRCS}>
++        $<$<BOOL:${NE10_BUILD_ARM_ONLY}>:${NE10_NEON_SRCS}>
+         ${NE10_INIT_SRCS}
+     )
+ 
+diff --git a/modules/dsp/NE10_init_dsp.c b/modules/dsp/NE10_init_dsp.c
+index a23ed16..ccaea50 100644
+--- a/modules/dsp/NE10_init_dsp.c
++++ b/modules/dsp/NE10_init_dsp.c
+@@ -31,6 +31,7 @@
+ 
+ ne10_result_t ne10_init_dsp (ne10_int32_t is_NEON_available)
+ {
++#ifdef ARM_ONLY
+     if (NE10_OK == is_NEON_available)
+     {
+         ne10_fft_alloc_c2c_float32 = ne10_fft_alloc_c2c_float32_neon;
+@@ -84,6 +85,7 @@ ne10_result_t ne10_init_dsp (ne10_int32_t is_NEON_available)
+ #endif // ENABLE_NE10_IIR_LATTICE_FLOAT_NEON
+     }
+     else
++#endif // ARM_ONLY
+     {
+         ne10_fft_alloc_c2c_float32 = ne10_fft_alloc_c2c_float32_c;
+         ne10_fft_alloc_c2c_int32 = ne10_fft_alloc_c2c_int32_c;
+diff --git a/modules/imgproc/NE10_init_imgproc.c b/modules/imgproc/NE10_init_imgproc.c
+index 6468098..d70eb96 100644
+--- a/modules/imgproc/NE10_init_imgproc.c
++++ b/modules/imgproc/NE10_init_imgproc.c
+@@ -31,6 +31,7 @@
+ 
+ ne10_result_t ne10_init_imgproc (ne10_int32_t is_NEON_available)
+ {
++#ifdef ARM_ONLY
+     if (NE10_OK == is_NEON_available)
+     {
+         ne10_img_resize_bilinear_rgba = ne10_img_resize_bilinear_rgba_neon;
+@@ -43,6 +44,7 @@ ne10_result_t ne10_init_imgproc (ne10_int32_t is_NEON_available)
+         ne10_img_boxfilter_rgba8888 = ne10_img_boxfilter_rgba8888_neon;
+     }
+     else
++#endif // ARM_ONLY
+     {
+         ne10_img_resize_bilinear_rgba = ne10_img_resize_bilinear_rgba_c;
+         ne10_img_rotate_rgba = ne10_img_rotate_rgba_c;
+diff --git a/modules/imgproc/NE10_resize.c b/modules/imgproc/NE10_resize.c
+index cd9f757..bfdaa8c 100644
+--- a/modules/imgproc/NE10_resize.c
++++ b/modules/imgproc/NE10_resize.c
+@@ -348,6 +348,7 @@ static void ne10_img_resize_cal_offset_linear (ne10_int32_t* xofs,
+ 
+ }
+ 
++#ifdef ARM_ONLY
+ extern void ne10_img_hresize_4channels_linear_neon (const ne10_uint8_t** src,
+         ne10_int32_t** dst,
+         ne10_int32_t count,
+@@ -439,6 +440,7 @@ static void ne10_img_resize_generic_linear_neon (ne10_uint8_t* src,
+ 
+     NE10_FREE (buffer_);
+ }
++#endif // ARM_ONLY
+ 
+ /**
+  * @ingroup IMG_RESIZE
+@@ -481,6 +483,7 @@ void ne10_img_resize_bilinear_rgba_c (ne10_uint8_t* dst,
+     NE10_FREE (buffer_);
+ }
+ 
++#ifdef ARM_ONLY
+ /**
+  * @ingroup IMG_RESIZE
+  * Specific implementation of @ref ne10_img_resize_bilinear_rgba using NEON SIMD capabilities.
+@@ -521,6 +524,7 @@ void ne10_img_resize_bilinear_rgba_neon (ne10_uint8_t* dst,
+     ne10_img_resize_generic_linear_neon (src, dst, xofs, ialpha, yofs, ibeta, xmin, xmax, ksize, srcw, srch, src_stride, dstw, dsth, cn);
+     NE10_FREE (buffer_);
+ }
++#endif // ARM_ONLY
+ 
+ /**
+  * @} end of IMG_RESIZE group
+diff --git a/modules/math/NE10_init_math.c b/modules/math/NE10_init_math.c
+index 0e11345..66635ce 100644
+--- a/modules/math/NE10_init_math.c
++++ b/modules/math/NE10_init_math.c
+@@ -31,6 +31,7 @@
+ 
+ ne10_result_t ne10_init_math (int is_NEON_available)
+ {
++#ifdef ARM_ONLY
+     if (NE10_OK == is_NEON_available)
+     {
+         ne10_addc_float = ne10_addc_float_neon;
+@@ -123,6 +124,7 @@ ne10_result_t ne10_init_math (int is_NEON_available)
+         ne10_identitymat_2x2f = ne10_identitymat_2x2f_neon;
+     }
+     else
++#endif // ARM_ONLY
+     {
+         ne10_addc_float = ne10_addc_float_c;
+         ne10_addc_vec2f = ne10_addc_vec2f_c;
+diff --git a/modules/physics/NE10_init_physics.c b/modules/physics/NE10_init_physics.c
+index ae8fae9..7bacae0 100644
+--- a/modules/physics/NE10_init_physics.c
++++ b/modules/physics/NE10_init_physics.c
+@@ -35,6 +35,7 @@
+ 
+ ne10_result_t ne10_init_physics (ne10_int32_t is_NEON_available)
+ {
++#ifdef ARM_ONLY
+     if (NE10_OK == is_NEON_available)
+     {
+ #ifdef ENABLE_NE10_PHYSICS_COMPUTE_AABB_VEC2F_NEON
+@@ -56,6 +57,7 @@ ne10_result_t ne10_init_physics (ne10_int32_t is_NEON_available)
+ #endif // ENABLE_NE10_PHYSICS_RELATIVE_V_VEC2F_NEON
+     }
+     else
++#endif // ARM_ONLY
+     {
+         ne10_physics_compute_aabb_vec2f = ne10_physics_compute_aabb_vec2f_c;
+         ne10_physics_relative_v_vec2f = ne10_physics_relative_v_vec2f_c;
