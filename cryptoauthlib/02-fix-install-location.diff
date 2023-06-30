@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 00e8caec..9926e1f4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -11,8 +11,6 @@ set(VERSION_PATCH 4)
+ option(BUILD_TESTS "Create Test Application with library" OFF)
+ #set(ATCA_PKCS11 ON CACHE INTERNAL "")
+ 
+-# Default install root which is normally /usr/local/
+-set(CMAKE_INSTALL_PREFIX "/" CACHE INTERNAL "")
+ 
+ # If including certificate definitions into the library then include them as ATCACERT_DEF_SRC
+ #file(GLOB ATCACERT_DEF_SRC ABSOLUTE "app/*.c")

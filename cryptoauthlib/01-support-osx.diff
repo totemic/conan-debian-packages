@@ -1,0 +1,12 @@
+diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
+index 749ee727..f06f65f3 100644
+--- a/lib/CMakeLists.txt
++++ b/lib/CMakeLists.txt
+@@ -232,6 +232,7 @@ set(CRYPTOAUTH_SRC ${CRYPTOAUTH_SRC} hal/hal_windows.c)
+ set(HID_SRC ../third_party/hidapi/windows/hid.c)
+ elseif(APPLE)
+ set(CRYPTOAUTH_SRC ${CRYPTOAUTH_SRC} hal/hal_linux.c)
++set(TWI_SRC hal/hal_osx_i2c_userspace.c)
+ set(HID_SRC ../third_party/hidapi/mac/hid.c)
+ elseif(UNIX)
+ set(CRYPTOAUTH_SRC ${CRYPTOAUTH_SRC} hal/hal_linux.c)
