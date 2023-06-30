@@ -59,6 +59,9 @@ class Mpg123Conan(ConanFile):
         # "seektable": "1000",
         # "module": "coreaudio",
     }
+
+    # This replaces the customizable options since we are pulling in premade libraries on linux and want to be in control of what
+    # happens on OSX to mimic the Linux library settings
     fixed_options = {
         "shared": False,
         "fPIC": False,
@@ -75,28 +78,38 @@ class Mpg123Conan(ConanFile):
         "module": "coreaudio",
     }
 
+    exports = ["../debiantools.py"]
+
     @property
     def _settings_build(self):
         return getattr(self, "settings_build", self.settings)
 
     @property
     def _audio_module(self):
-        return {
-            "libalsa": "alsa",
-        }.get(str(self.options.module), str(self.options.module))
+        # return {
+        #     "libalsa": "alsa",
+        # }.get(str(self.options.module), str(self.options.module))
+
+        # use fixed audio settings since we are pulling in ready made Linux libraries
+        if self.settings.os == "Linux":
+            return "alsa"
+        elif self.settings.os == "Windows":
+            return "win32"
+        elif self.settings.os == "Macos":
+            return "coreaudio"
 
     def export_sources(self):
         export_conandata_patches(self)
 
     def config_options(self):
         if self.settings.os == "Windows":
-            self.options.rm_safe("fPIC")
+            self.fixed_options.rm_safe("fPIC")
 
     def configure(self):
         self.settings.rm_safe("compiler.libcxx")
         self.settings.rm_safe("compiler.cppstd")
-        if self.options.shared:
-            self.options.rm_safe("fPIC")
+        # if self.options.shared:
+        #     self.options.rm_safe("fPIC")
 
     def layout(self):
         if is_msvc(self):
@@ -105,19 +118,30 @@ class Mpg123Conan(ConanFile):
             basic_layout(self, src_folder="src")
 
     def requirements(self):
-        if self.options.module == "libalsa":
+        # Linux is hard-coded to alsa in our build
+        if self.settings.os == "Linux":
+            self.requires("libasound2/1.1.8@totemic/stable")
+            return
+        self.output.info(self.options)
+        self.output.info("self.fixed_options =")
+        self.output.info(self.fixed_options)
+        if self.fixed_options["module"] == "libalsa":
             self.requires("libalsa/1.2.7.2")
-        if self.options.module == "tinyalsa":
+        if self.fixed_options["module"] == "tinyalsa":
             self.requires("tinyalsa/2.0.0")
 
     def validate(self):
-        if not str(self.options.seektable).isdigit():
+        if not str(self.fixed_options["seektable"]).isdigit():
             raise ConanInvalidConfiguration(f"The option -o {self.ref.name}:seektable must be an integer number.")
-        if self.settings.os != "Windows" and self.options.module == "win32":
+        if self.settings.os != "Windows" and self.fixed_options["module"] == "win32":
             raise ConanInvalidConfiguration(f"The option -o {self.ref.name}:module should not use 'win32' for non-Windows OS")
 
 
     def build_requirements(self):
+        # Linux is pulling ready-made debian libraries
+        if self.settings.os == "Linux":
+            return
+        
         if not self.conf.get("tools.gnu:pkg_config", default=False, check_type=str):
             self.tool_requires("pkgconf/1.9.3")
         if self.settings.arch in ["x86", "x86_64"]:
@@ -139,18 +163,18 @@ class Mpg123Conan(ConanFile):
             env.generate(scope="build")
         if is_msvc(self):
             tc = CMakeToolchain(self)
-            tc.variables["NO_MOREINFO"] = not self.options.moreinfo
-            tc.variables["NETWORK"] = self.options.network
-            tc.variables["NO_NTOM"] = not self.options.flexible_resampling
-            tc.variables["NO_ICY"] = not self.options.icy
-            tc.variables["NO_ID3V2"] = not self.options.id3v2
-            tc.variables["IEEE_FLOAT"] = self.options.ieeefloat
-            tc.variables["NO_LAYER1"] = not self.options.layer1
-            tc.variables["NO_LAYER2"] = not self.options.layer2
-            tc.variables["NO_LAYER3"] = not self.options.layer3
+            tc.variables["NO_MOREINFO"] = not self.fixed_options["moreinfo"]
+            tc.variables["NETWORK"] = self.fixed_options["network"]
+            tc.variables["NO_NTOM"] = not self.fixed_options["flexible_resampling"]
+            tc.variables["NO_ICY"] = not self.fixed_options["icy"]
+            tc.variables["NO_ID3V2"] = not self.fixed_options["id3v2"]
+            tc.variables["IEEE_FLOAT"] = self.fixed_options["ieeefloat"]
+            tc.variables["NO_LAYER1"] = not self.fixed_options["layer1"]
+            tc.variables["NO_LAYER2"] = not self.fixed_options["layer2"]
+            tc.variables["NO_LAYER3"] = not self.fixed_options["layer3"]
             tc.variables["USE_MODULES"] = False
             tc.variables["CHECK_MODULES"] = self._audio_module
-            tc.variables["WITH_SEEKTABLE"] = self.options.seektable
+            tc.variables["WITH_SEEKTABLE"] = self.fixed_options["seektable"]
             tc.generate()
             tc = CMakeDeps(self)
             tc.generate()
@@ -158,21 +182,21 @@ class Mpg123Conan(ConanFile):
             yes_no = lambda v: "yes" if v else "no"
             tc = AutotoolsToolchain(self)
             tc.configure_args.extend([
-                f"--enable-moreinfo={yes_no(self.options.moreinfo)}",
-                f"--enable-network={yes_no(self.options.network)}",
-                f"--enable-ntom={yes_no(self.options.flexible_resampling)}",
-                f"--enable-icy={yes_no(self.options.icy)}",
-                f"--enable-id3v2={yes_no(self.options.id3v2)}",
-                f"--enable-ieeefloat={yes_no(self.options.ieeefloat)}",
-                f"--enable-layer1={yes_no(self.options.layer1)}",
-                f"--enable-layer2={yes_no(self.options.layer2)}",
-                f"--enable-layer3={yes_no(self.options.layer3)}",
+                f"--enable-moreinfo={yes_no(self.fixed_options['moreinfo'])}",
+                f"--enable-network={yes_no(self.fixed_options['network'])}",
+                f"--enable-ntom={yes_no(self.fixed_options['flexible_resampling'])}",
+                f"--enable-icy={yes_no(self.fixed_options['icy'])}",
+                f"--enable-id3v2={yes_no(self.fixed_options['id3v2'])}",
+                f"--enable-ieeefloat={yes_no(self.fixed_options['ieeefloat'])}",
+                f"--enable-layer1={yes_no(self.fixed_options['layer1'])}",
+                f"--enable-layer2={yes_no(self.fixed_options['layer2'])}",
+                f"--enable-layer3={yes_no(self.fixed_options['layer3'])}",
                 f"--with-audio={self._audio_module}",
                 f"--with-default-audio={self._audio_module}",
-                f"--with-seektable={self.options.seektable}",
+                f"--with-seektable={self.fixed_options['seektable']}",
                 f"--enable-modules=no",
-                f"--enable-shared={yes_no(self.options.shared)}",
-                f"--enable-static={yes_no(not self.options.shared)}",
+                f"--enable-shared={yes_no(self.fixed_options['shared'])}",
+                f"--enable-static={yes_no(not self.fixed_options['shared'])}",
             ])
             if is_apple_os(self):
                 # Needed for fix_apple_shared_install_name invocation in package method
@@ -182,6 +206,45 @@ class Mpg123Conan(ConanFile):
             tc.generate()
 
     def build(self):
+        # Linux is pulling ready-made debian libraries
+        if self.settings.os == "Linux":
+            if self.settings.arch == "x86_64":
+                # https://packages.debian.org/buster/libmpg123-0
+                sha_lib = "aad76b14331161db35a892d211f892e8ceda7e252a05dca98b51c00ae59d1b33"
+                # https://packages.debian.org/buster/amd64/libout123-0/download
+                sha_out = "319060bdf4a17f0b9d876c6ed3d87e7458d262864c7cac7fc7c46796fe06cded"
+                # https://packages.debian.org/buster/libmpg123-dev
+                sha_dev = "ac90ec3a573dbddbb663d6565fe9985a5d9c994509ac6b11168ed980e964d58f"
+
+            elif self.settings.arch == "armv8":
+                # https://packages.debian.org/buster/arm64/libmpg123-0/download
+                sha_lib = "f6a7a962e87229af47f406449dc6837d0383be76752180ea22da17c1318e1aae"
+                # https://packages.debian.org/buster/arm64/libout123-0/download
+                sha_out = "4cb138ec6e20cf66857c2ca69c3914b4c9e74fc8287271fd741608af421528eb"
+                # https://packages.debian.org/buster/arm64/libmpg123-dev/download
+                sha_dev = "4b5312bc0a8f3a1cb765ff8f3d3d1af1fddcaf05aa723314fbc0277ba6ea43ff"
+            else:
+                raise Exception("Todo: add binary urls for this architecture")
+
+            #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-0_1.25.10-2_amd64.deb
+            #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-0_1.25.10-2_arm64.deb
+            #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libout123-0_1.25.10-2_amd64.deb
+            #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libout123-0_1.25.10-2_arm64.deb
+            #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-dev_1.25.10-2_amd64.deb
+            #http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-dev_1.25.10-2_arm64.deb
+            url_lib = ("http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-0_%s-%s_%s.deb"
+                % (str(self.version), self.debian_build_version, translate_arch(self)))
+            url_out = ("http://ftp.us.debian.org/debian/pool/main/m/mpg123/libout123-0_%s-%s_%s.deb"
+                % (str(self.version), self.debian_build_version, translate_arch(self)))
+            url_dev = ("http://ftp.us.debian.org/debian/pool/main/m/mpg123/libmpg123-dev_%s-%s_%s.deb"
+                % (str(self.version), self.debian_build_version, translate_arch(self)))
+
+            download_extract_deb(self, url_lib, sha_lib)
+            download_extract_deb(self, url_out, sha_out)
+            download_extract_deb(self, url_dev, sha_dev)
+            return
+
+
         apply_conandata_patches(self)
         if is_msvc(self):
             cmake = CMake(self)
@@ -193,6 +256,13 @@ class Mpg123Conan(ConanFile):
             autotools.make()
 
     def package(self):
+        # on Linux, use the ready made binary libraries
+        if self.settings.os == "Linux":
+            copy(self, "*", src=os.path.join(self.build_folder, "usr/lib", triplet_name(self)), dst=os.path.join(self.package_folder, "lib"))
+            copy(self, "*", src=os.path.join(self.build_folder, "usr/include"), dst=os.path.join(self.package_folder, "include"))
+            copy(self, "copyright", src=os.path.join(self.build_folder, "usr/share/doc", self.name), dst=self.package_folder)
+            return
+
         copy(self, "COPYING", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
         if is_msvc(self):
             cmake = CMake(self)
@@ -215,7 +285,7 @@ class Mpg123Conan(ConanFile):
         self.cpp_info.components["libmpg123"].set_property("cmake_target_name", "MPG123::libmpg123")
         self.cpp_info.components["libmpg123"].names["cmake_find_package"] = "libmpg123"
         self.cpp_info.components["libmpg123"].names["cmake_find_package_multi"] = "libmpg123"
-        if self.settings.os == "Windows" and self.options.shared:
+        if self.settings.os == "Windows" and self.fixed_options["shared"]:
             self.cpp_info.components["libmpg123"].defines.append("LINK_MPG123_DLL")
 
         self.cpp_info.components["libout123"].libs = ["out123"]
@@ -225,25 +295,34 @@ class Mpg123Conan(ConanFile):
         self.cpp_info.components["libout123"].names["cmake_find_package_multi"] = "libout123"
         self.cpp_info.components["libout123"].requires = ["libmpg123"]
 
-        self.cpp_info.components["libsyn123"].libs = ["syn123"]
-        self.cpp_info.components["libsyn123"].set_property("pkg_config_name", "libsyn123")
-        self.cpp_info.components["libsyn123"].set_property("cmake_target_name", "MPG123::libsyn123")
-        self.cpp_info.components["libsyn123"].names["cmake_find_package"] = "libsyn123"
-        self.cpp_info.components["libsyn123"].names["cmake_find_package_multi"] = "libsyn123"
-        self.cpp_info.components["libsyn123"].requires = ["libmpg123"]
+        # Disable libsyn123 since we don't have a linux binary version for it and we don't need it
+        # self.cpp_info.components["libsyn123"].libs = ["syn123"]
+        # self.cpp_info.components["libsyn123"].set_property("pkg_config_name", "libsyn123")
+        # self.cpp_info.components["libsyn123"].set_property("cmake_target_name", "MPG123::libsyn123")
+        # self.cpp_info.components["libsyn123"].names["cmake_find_package"] = "libsyn123"
+        # self.cpp_info.components["libsyn123"].names["cmake_find_package_multi"] = "libsyn123"
+        # self.cpp_info.components["libsyn123"].requires = ["libmpg123"]
 
         if self.settings.os == "Linux":
             self.cpp_info.components["libmpg123"].system_libs = ["m"]
-            if self.settings.arch in ["x86", "x86_64"]:
-                self.cpp_info.components["libsyn123"].system_libs = ["mvec"]
+
+            # Disable libsyn123 
+            # if self.settings.arch in ["x86", "x86_64"]:
+            #     self.cpp_info.components["libsyn123"].system_libs = ["mvec"]
+
+            # hard-code libasound2 dependency
+            self.cpp_info.components["libout123"].requires.append("libasound2::libasound2")
         elif self.settings.os == "Windows":
             self.cpp_info.components["libmpg123"].system_libs = ["shlwapi"]
+        # add OSX support
+        elif self.settings.os == "Macos":
+            self.cpp_info.components["libout123"].libs.append("-Wl,-framework,AudioToolbox")
 
-        if self.options.module == "libalsa":
+        if self.fixed_options["module"] == "libalsa":
             self.cpp_info.components["libout123"].requires.append("libalsa::libalsa")
-        if self.options.module == "tinyalsa":
+        if self.fixed_options["module"] == "tinyalsa":
             self.cpp_info.components["libout123"].requires.append("tinyalsa::tinyalsa")
-        if self.options.module == "win32":
+        if self.fixed_options["module"] == "win32":
             self.cpp_info.components["libout123"].system_libs.append("winmm")
 
 
