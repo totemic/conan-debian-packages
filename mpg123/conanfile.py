@@ -116,6 +116,16 @@ class Mpg123Conan(ConanFile):
             cmake_layout(self, src_folder="src")
         else:
             basic_layout(self, src_folder="src")
+            # set the build folder to the same location as the source folder
+            # this will make sure that we have an include path set to <uuid>/src/src
+            # if we don't do this, we get this error
+            # In file included from /Users/jens/.conan/data/mpg123/1.25.10/totemic/stable/build/1efa8d13c9f5d5cc46b9a6053c55d5fe4d5bb9e8/src/src/libmpg123/synth_stereo_avx.S:9:
+            # /Users/jens/.conan/data/mpg123/1.25.10/totemic/stable/build/1efa8d13c9f5d5cc46b9a6053c55d5fe4d5bb9e8/src/src/libmpg123/mangle.h:14:10: fatal error: 'intsym.h' file not found
+            #    #include "intsym.h"
+            # compiler line: gcc -E -I. -I/Users/jens/.conan/data/mpg123/1.25.10/totemic/stable/build/1efa8d13c9f5d5cc46b9a6053c55d5fe4d5bb9e8/src -I./src  -DASMALIGN_BALIGN /Users/jens/.conan/data/mpg123/1.25.10/totemic/stable/build/1efa8d13c9f5d5cc46b9a6053c55d5fe4d5bb9e8/src/src/libmpg123/synth_stereo_avx.S | yasm - -pgas -rgas -mamd64 -f macho -o src/libmpg123/synth_stereo_avx.o
+            # there might be a better way to pass an additional include path to automake but this line wasn't exposed to make:
+            #    self.cpp.source.includedirs = ["src"]  # maps to ./src/src
+            self.folders.build = self.folders.source
 
     def requirements(self):
         # Linux is hard-coded to alsa in our build
