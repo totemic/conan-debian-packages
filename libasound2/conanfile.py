@@ -1,9 +1,17 @@
-import os
-from conans import ConanFile, tools
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.apple import is_apple_os
+from conan.tools.cmake import cmake_layout, CMake, CMakeDeps, CMakeToolchain
+from conan.tools.layout import basic_layout
+from conan.tools.gnu import PkgConfig
+from conan.tools.files import get, copy, export_conandata_patches, apply_conandata_patches, rmdir, rm
+
+from pathlib import Path
+
 try:
     # we can only use this file when running conan install. When exporting this recipe, the file does not yet exist
     # since it's in a different location and conan fails. In order to handle this, we need to catch this here
-    from debiantools import copy_cleaned, download_extract_deb, translate_arch, triplet_name
+    from debiantools import copy_cleaned_no_prefix, download_extract_deb, translate_arch, triplet_name
 except ImportError:
     pass 
 
@@ -49,24 +57,31 @@ class DebianDependencyConan(ConanFile):
         download_extract_deb(self, url_dev, sha_dev)
 
     def package(self):
-        self.copy(pattern="*", dst="lib", src="usr/lib/" + triplet_name(self), symlinks=True)
-        self.copy(pattern="*", dst="include", src="usr/include", symlinks=True)
-        self.copy(pattern="copyright", src="usr/share/doc/" + self.name, symlinks=True)
+        copy(self, "*", src=Path(self.build_folder)/"usr"/"lib"/triplet_name(self), dst=Path(self.package_folder)/"lib")
+        copy(self, "*", src=Path(self.build_folder)/"usr"/"include", dst=Path(self.package_folder)/"include")
+        copy(self, "copyright", src=Path(self.build_folder)/"usr"/"share"/"doc"/self.name, dst=self.package_folder)
 
     def package_info(self):
-        #pkgpath = "usr/lib/%s/pkgconfig" % triplet_name(self)
-        pkgpath =  "lib/pkgconfig"
-        pkgconfigpath = os.path.join(self.package_folder, pkgpath)
-        self.output.info("package info file: " + pkgconfigpath)
-        with tools.environment_append({'PKG_CONFIG_PATH': pkgconfigpath}):
-            pkg_config = tools.PkgConfig("alsa", variables={ "prefix" : self.package_folder } )
+        # pkgconfigpath = str(Path(self.package_folder)/"lib"/"pkgconfig")
+        # self.output.info("package info file: " + pkgconfigpath)
+        # pkg_config = PkgConfig(self, "alsa", pkgconfigpath)
+        # # read the prefix so we can remove it later
+        # prefix = pkg_config.variables['prefix']
+        # copy_cleaned_no_prefix(pkg_config.libdirs, prefix, self.cpp_info.libdirs)
+        # copy_cleaned_no_prefix(pkg_config.libs, prefix, self.cpp_info.libs)
+        # copy_cleaned_no_prefix(pkg_config.includedirs, prefix, self.cpp_info.includedirs)
 
-            copy_cleaned(pkg_config.libs_only_L, "-L", self.cpp_info.lib_paths)
-            self.output.info("lib_paths %s" % self.cpp_info.lib_paths)
+        #pkg_config = tools.PkgConfig("alsa", variables={ "prefix" : self.package_folder } )
+        #self.output.info(pkg_config.variables)
+        #self.output.info(f"pkg_config.libs_only_L: {pkg_config.libdirs} - {pkg_config._get_option('libs-only-L').split()}")
+        #self.output.info(f"pkg_config.libs_only_l: {pkg_config.libs} - {pkg_config._get_option('libs-only-l').split()}")
+        #self.output.info(f"pkg_config.cflags_only_I: {pkg_config.includedirs} - {pkg_config._get_option('cflags-only-I').split()}")
 
-            # exclude all libraries from dependencies here, they are separately included
-            copy_cleaned(pkg_config.libs_only_l, "-l", self.cpp_info.libs)
-            self.output.info("libs: %s" % self.cpp_info.libs)
+        self.cpp_info.libdirs = ["lib"]
+        self.cpp_info.libs = ["asound"]
+        self.cpp_info.includedirs = ["include", "include/alsa"]
 
-            copy_cleaned(pkg_config.cflags_only_I, "-I", self.cpp_info.include_paths)
-            self.output.info("include_paths: %s" % self.cpp_info.include_paths)
+        self.output.info(f"libdirs {self.cpp_info.libdirs}")
+        self.output.info(f"libs: {self.cpp_info.libs}")
+        self.output.info(f"includedirs: {self.cpp_info.includedirs}")
+
