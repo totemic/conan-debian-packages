@@ -1,16 +1,19 @@
-import os
-from conans import ConanFile, tools
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.files import copy
+from pathlib import Path
+
 try:
     # we can only use this file when running conan install. When exporting this recipe, the file does not yet exist
     # since it's in a different location and conan fails. In order to handle this, we need to catch this here
-    from debiantools import copy_cleaned, download_extract_deb, translate_arch, triplet_name
+    from debiantools import download_extract_deb, translate_arch, triplet_name
 except ImportError:
     pass 
 
 class DebianDependencyConan(ConanFile):
     name = "libudev1"
     version = "237"
-    build_version = "3ubuntu10.33" 
+    build_version = "3ubuntu10.57" 
     homepage = "https://packages.ubuntu.com/bionic-updates/libudev1"
     # dev_url = https://packages.ubuntu.com/bionic-updates/libudev-dev
     description = "libudev provides APIs to introspect and enumerate devices on the local system"
@@ -27,9 +30,9 @@ class DebianDependencyConan(ConanFile):
         if self.settings.os == "Linux":
             if self.settings.arch == "x86_64":
                 # https://packages.ubuntu.com/bionic-updates/amd64/libudev1/download
-                sha_lib = "d9d84a0a62002b17369e289912a370e23645099744a52a3bed0d4c57323de7be"
+                sha_lib = "04cb377b1ecaa3f4a8e1d2612c428ccf6d87b9f9cda267ac78d34d99388675df"
                 # https://packages.ubuntu.com/bionic-updates/amd64/libudev-dev/download
-                sha_dev = "99094f5144d0b9857ebc65415a2a331be8b5595f63e12a574243905fded2fd1b"
+                sha_dev = "bc4c38aea09a6930a081c1b7d100f573bf60fa5ca4e5671320327a926c5e2464"
                 
                 url_lib = ("http://us.archive.ubuntu.com/ubuntu/pool/main/s/systemd/libudev1_%s-%s_%s.deb"
                    % (str(self.version), self.build_version, translate_arch(self)))
@@ -37,9 +40,9 @@ class DebianDependencyConan(ConanFile):
                    % (str(self.version), self.build_version, translate_arch(self)))
             elif self.settings.arch == "armv8":
                 # https://packages.ubuntu.com/bionic-updates/arm64/libudev1/download
-                sha_lib = "0ce8fd96fc131cf8887ec181900d7b566385cc628ab0f7316266fe102ed8cbfe"
+                sha_lib = "ee9800e091c1c53e67f97f1719938554169f18a64d3c37f116426c4d814cdad4"
                 # https://packages.ubuntu.com/bionic-updates/arm64/libudev-dev/download
-                sha_dev = "9f134e6de6bed76cd63e3a3ec74500e82c80c516b23346ade709b0cc4b3e2129"
+                sha_dev = "d6bf9a582454e082b733a4d0a42fe1e8951ae959f4561452524c40b45852c50b"
                 
                 url_lib = ("http://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/libudev1_%s-%s_%s.deb"
                    % (str(self.version), self.build_version, translate_arch(self)))
@@ -54,31 +57,16 @@ class DebianDependencyConan(ConanFile):
             self.output.info("Nothing to be done for this OS")
 
     def package(self):
-        self.copy(pattern="*", dst="lib", src="lib/" + triplet_name(self), symlinks=True)
-        self.copy(pattern="*", dst="lib", src="usr/lib/" + triplet_name(self), symlinks=True)
-        self.copy(pattern="*", dst="include", src="usr/include", symlinks=True)
-        self.copy(pattern="copyright", src="usr/share/doc/" + self.name, symlinks=True)
-
-    def copy_cleaned(self, source, prefix_remove, dest):
-        for e in source:
-            if (e.startswith(prefix_remove)):
-                entry = e[len(prefix_remove):]
-                if len(entry) > 0 and not entry in dest:
-                    dest.append(entry)
+        copy(self, "*", src=Path(self.build_folder)/"lib"/triplet_name(self), dst=Path(self.package_folder)/"lib")
+        copy(self, "*", src=Path(self.build_folder)/"usr"/"lib"/triplet_name(self), dst=Path(self.package_folder)/"lib")
+        copy(self, "*", src=Path(self.build_folder)/"usr"/"include", dst=Path(self.package_folder)/"include")
+        copy(self, "copyright", src=Path(self.build_folder)/"usr"/"share"/"doc"/self.name, dst=self.package_folder)
 
     def package_info(self):
-        # pkgpath = "usr/lib/%s/pkgconfig" % triplet_name(self)
-        pkgpath =  "lib/pkgconfig"
-        pkgconfigpath = os.path.join(self.package_folder, pkgpath)
         if self.settings.os == "Linux":
-            self.output.info("package info file: " + pkgconfigpath)
-            with tools.environment_append({'PKG_CONFIG_PATH': pkgconfigpath}):
-                pkg_config = tools.PkgConfig("libudev", variables={ "prefix" : self.package_folder } )
-
-                self.output.info("lib_paths %s" % self.cpp_info.lib_paths)
-
-                # exclude all libraries from dependencies here, they are separately included
-                copy_cleaned(pkg_config.libs_only_l, "-l", self.cpp_info.libs)
-                self.output.info("libs: %s" % self.cpp_info.libs)
-
-                self.output.info("include_paths: %s" % self.cpp_info.include_paths)
+            #self.cpp_info.libdirs = ["lib"]
+            self.cpp_info.libs = ["udev"]
+            #self.cpp_info.includedirs = ["include"]
+            self.output.info(f"libdirs {self.cpp_info.libdirs}")
+            self.output.info(f"libs: {self.cpp_info.libs}")
+            self.output.info(f"includedirs: {self.cpp_info.includedirs}")
