@@ -6,7 +6,7 @@ from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import cross_building
 from conan.tools.env import VirtualBuildEnv, VirtualRunEnv
 from conan.tools.files import get, copy
-from conan.tools.gnu import Autotools, AutotoolsDeps, AutotoolsToolchain
+from conan.tools.gnu import Autotools, AutotoolsDeps, AutotoolsToolchain, PkgConfigDeps
 from conan.tools.layout import basic_layout
 import os
 from pathlib import Path
@@ -31,7 +31,7 @@ class LibOSTreeConan(ConanFile):
         self.cpp.package.resdirs = ["share"]
 
     def requirements(self):
-        self.requires("libglib2.0-0/2.56.4@totemic/stable")
+        self.requires("glib-2.0/2.56.4@totemic/stable")
         # if self.settings.os == "Linux":
             # todo: we should also add depdencies to libsystemd0.so.1, libcurl.so.4
             # right now this is handled by telling the linker to ignore unknown symbols in secondary dependencies
@@ -125,8 +125,10 @@ class LibOSTreeConan(ConanFile):
         env.define("BASH_COMPLETIONSDIR", "${prefix}/share/bash-completion/completions")
         tc.generate(env)
 
-        tc = AutotoolsDeps(self)
-        tc.generate()
+        AutotoolsDeps(self).generate()
+        # Add glib-2.0.pc to the build-debug/conan directory and have it used for the configure script. 
+        # Otherwise on native Linux build platforms another conflicting glib version will be found 
+        PkgConfigDeps(self).generate()
 
     def build(self):
         if self.settings.os == "Linux":
@@ -146,7 +148,6 @@ class LibOSTreeConan(ConanFile):
             # this link is pointing to the wrong location. Since we don't need it, just remove it
             os.remove(Path(self.package_folder)/"etc"/"grub.d"/"15_ostree")
         else:
-            self.output.info(f"source_folder: {self.source_folder}")
             # on non-linux platforms, expose the header files to help cross-development
             copy(self, "*.h", src=Path(self.source_folder)/"src"/"libostree", dst=Path(self.package_folder)/"include"/"ostree-1")
 

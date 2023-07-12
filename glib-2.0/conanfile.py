@@ -11,7 +11,7 @@ except ImportError:
     pass 
 
 class DebianDependencyConan(ConanFile):
-    name = "libglib2.0-0"
+    name = "glib-2.0"
     version = "2.56.4"
     build_version = "0ubuntu0.18.04.9" 
     homepage = "https://packages.ubuntu.com/bionic-updates/libglib2.0-0"
@@ -75,6 +75,18 @@ class DebianDependencyConan(ConanFile):
         # add additional path to sub directories since some libraries use them this way
         # add extra include path for glibconfig.h
         self.cpp_info.includedirs = ["include", str(Path("include")/"glib-2.0"), str(Path("include")/"gio-unix-2.0"), str(Path("lib")/"glib-2.0"/"include")]
+
+        # https://github.com/conan-io/conan-center-index/blob/master/recipes/glib/all/conanfile.py
+        # set these variables, so that the libostree recipe can call the native programs during run of "configuration" script
+        # (we assume that glib is installed on the native build system to avoid downloading more dependencies here)
+        pkgconfig_variables = {
+            'glib_genmarshal': 'glib-genmarshal',
+            'gobject_query': 'gobject-query',
+            'glib_mkenums': 'glib-mkenums'
+        }
+        self.cpp_info.set_property(
+            "pkg_config_custom_content",
+            "\n".join(f"{key}={value}" for key, value in pkgconfig_variables.items()))
 
         self.output.info(f"libdirs {self.cpp_info.libdirs}")
         self.output.info(f"libs: {self.cpp_info.libs}")
