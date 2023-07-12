@@ -1,0 +1,5 @@
+sources:
+  "2022.1":
+    url: 
+      - "https://github.com/ostreedev/ostree/releases/download/v2022.1/libostree-2022.1.tar.xz"
+    sha256: "43a00e7856842b8a34f6616fc2ce1ce238ef43210cca41f70e6b4b0d2a9fcad5"
