@@ -9,7 +9,7 @@ class CryptoAuthLib(ConanFile):
     name = 'cryptoauthlib'
     version = '3.3.3'
     license = 'MIT'
-    url = 'https://github.com/jens-totemic/conan-cryptoauthlib'
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/cryptoauthlib"
     homepage = 'https://github.com/MicrochipTech/cryptoauthlib'
     description = 'Library for interacting with the Crypto Authentication secure elements.'
     settings = 'os', 'compiler', 'build_type', 'arch'
@@ -35,14 +35,8 @@ class CryptoAuthLib(ConanFile):
         'debugOutput': False,
         'debugOutputPkcs11': False
     }
-    exports_sources = ["lib/*", "01-support-osx.diff", "02-fix-install-location.diff"]
+    exports_sources = ["lib/*", "patches/3.3.3_01-support-osx.diff", "patches/3.3.3_02-fix-install-location.diff"]
     generators = "cmake"
-
-    scm = {
-        'type': 'git',
-        'url': 'https://github.com/MicrochipTech/cryptoauthlib.git',
-        'revision': 'v'+version
-    }
 
     def requirements(self):
         if self.settings.os == "Linux" and self.options['halHID']:
@@ -74,10 +68,11 @@ class CryptoAuthLib(ConanFile):
         return cmake
 
     def source(self):
+        tools.get(**self.conan_data["sources"][self.version], destination=".", strip_root=True)
         # Fix linker not finding malloc and free on OSX 
-        tools.patch(patch_file="01-support-osx.diff")
+        tools.patch(patch_file="patches/3.3.3_01-support-osx.diff")
         # Fix install directory hard-coded to / 
-        tools.patch(patch_file="02-fix-install-location.diff")
+        tools.patch(patch_file="patches/3.3.3_02-fix-install-location.diff")
 
     def build(self):
         cmake = self._configure_cmake()
