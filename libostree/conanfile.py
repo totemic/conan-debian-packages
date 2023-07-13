@@ -11,6 +11,8 @@ from conan.tools.layout import basic_layout
 import os
 from pathlib import Path
 
+required_conan_version = ">=1.53.0"
+
 class LibOSTreeConan(ConanFile):
     name = "libostree"
     version = "2022.1"
