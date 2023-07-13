@@ -9,7 +9,7 @@ class DSPFiltersRecipe(ConanFile):
     version = "cci.20170309"
     homepage = "https://github.com/vinniefalco/DSPFilters"
     description = "A Collection of Useful C++ Classes for Digital Signal Processing"
-    url = "https://github.com/vinniefalco/DSPFilters.git"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/DSPFilters"
     license = "MIT"
     settings = "os", "arch", "compiler", "build_type"
 

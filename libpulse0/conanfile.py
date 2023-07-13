@@ -19,7 +19,7 @@ class DebianDependencyConan(ConanFile):
     homepage = "https://packages.debian.org/buster/libpulse0"
     # dev_url = https://packages.debian.org/buster/libpulse-dev
     description = "PulseAudio client development headers and libraries"
-    url = "https://github.com/totemic/conan-package-recipes/libpulse"    
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/libpulse0"    
     license = "GNU Lesser General Public License"
     settings = "os", "arch"
     exports = ["../debiantools.py"]

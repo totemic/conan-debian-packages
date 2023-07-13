@@ -16,7 +16,7 @@ class DebianDependencyConan(ConanFile):
     homepage = "https://packages.ubuntu.com/bionic-updates/libsystemd0"
     # dev_url = https://packages.ubuntu.com/bionic-updates/libsystemd-dev
     description = "Systemd is a suite of basic building blocks for a Linux system. It provides a system and service manager that runs as PID 1 and starts the rest of the system."
-    url = "https://github.com/totemic/conan-package-recipes/libsystemd0"    
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/libsystemd0"    
     license = "LGPL"
     settings = "os", "arch"
     exports = ["../debiantools.py"]

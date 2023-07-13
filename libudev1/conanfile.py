@@ -17,7 +17,7 @@ class DebianDependencyConan(ConanFile):
     homepage = "https://packages.ubuntu.com/bionic-updates/libudev1"
     # dev_url = https://packages.ubuntu.com/bionic-updates/libudev-dev
     description = "libudev provides APIs to introspect and enumerate devices on the local system"
-    url = "https://github.com/totemic/conan-package-recipes/libudev1"    
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/libudev1"    
     license = "LGPL"
     settings = "os", "arch"
     exports = ["../debiantools.py"]

@@ -21,7 +21,7 @@ class LibOSTreeConan(ConanFile):
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {'shared': True, 'fPIC': True}
     homepage = "https://github.com/ostreedev/ostree"
-    url = "http://github.com/totemic/conan-libostree"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/libostree"
     license = "LGPLv2+"
     description = "libostree is both a shared library and suite of command line tools that combines a git-like model for committing and downloading bootable filesystem trees, along with a layer for deploying them and managing the bootloader configuration"
     _source_subfolder = "source_subfolder"
