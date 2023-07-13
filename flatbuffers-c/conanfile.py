@@ -2,13 +2,13 @@ import os
 from conans import ConanFile, CMake, tools
 
 
-class PahocConan(ConanFile):
+class FlatbuffersConan(ConanFile):
     name = "flatbuffers-c"
     version = "0.6.1"
     license = "Apache License 2.0"
     homepage = "https://github.com/dvidelabs/flatcc"
     description = "FlatBuffers Compiler and Library in C for C"
-    url = "https://github.com/jens-totemic/conan-flatbuffers-c"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/flatbuffers-c"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False],
                "fPIC": [True, False],
@@ -16,15 +16,9 @@ class PahocConan(ConanFile):
                "tests": [True, False],
                "reflection": [True, False]}
     default_options = {"shared": False, "fPIC": True, "runtimeOnly": True, "tests": False, "reflection": False}
-    exports_sources = ["01-RemoveDebugPostfix.diff"]
+    exports_sources = ["patches/0.6.1-001-RemoveDebugPostfix.diff"]
     generators = "cmake"
 
-    scm = {
-        "type": "git",
-        #"subfolder": source_subfolder,
-        "url": "https://github.com/dvidelabs/flatcc.git",
-        "revision": "v" + version
-    }
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -47,7 +41,8 @@ class PahocConan(ConanFile):
     def source(self):
         # Run patch that removes the "_d" prefix from libraries and compiler. 
         # We don't need it as each version has it's own conan package anyway 
-        tools.patch(patch_file="01-RemoveDebugPostfix.diff")
+        tools.get(**self.conan_data["sources"][self.version], destination=".", strip_root=True)
+        tools.patch(patch_file="patches/0.6.1-001-RemoveDebugPostfix.diff")
 
     def build(self):
         cmake = self._configure_cmake()
