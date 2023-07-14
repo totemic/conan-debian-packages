@@ -5,8 +5,9 @@ from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches, get
 
-import os
 from pathlib import Path
+
+required_conan_version = ">=1.53.0"
 
 class CryptoAuthLib(ConanFile):
     name = 'cryptoauthlib'
