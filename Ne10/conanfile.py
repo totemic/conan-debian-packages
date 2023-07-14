@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-import os
-from conans import ConanFile, CMake, tools
+from conan import ConanFile
+from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
+from conan.tools.files import apply_conandata_patches, collect_libs, export_conandata_patches, get
+from pathlib import Path
 
+required_conan_version = ">=1.53.0"
 
 class Ne10Conan(ConanFile):
     name = "Ne10"
@@ -9,60 +12,67 @@ class Ne10Conan(ConanFile):
     homepage = "https://github.com/projectNe10/Ne10"
     description = "An open optimized software library project for the ARM® Architecture."
     url = "https://github.com/totemic/conan-package-recipes/tree/main/Ne10"
+    license = 'BSD-3-Clause'
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False],
                "fPIC": [True, False]}
     default_options = {"shared": False,
-                       "fPIC": True}
-    generators = "cmake"
-    exports = "LICENSE"
-    exports_sources = ["patches/01-build-c-only.patch", "patches/02-increase-cpuinfo-buffer-size.patch"]
+                       "fPIC": True}    
+    # exports = "LICENSE"
+
+    def export_sources(self):
+        export_conandata_patches(self)
 
     def config_options(self):
         if self.settings.os == "Windows":
-            del self.options.fPIC
+            self.options.rm_safe("fPIC")
 
     def configure(self):
         del self.settings.compiler.libcxx
 
-    def _configure_cmake(self):
-        cmake = CMake(self)
+    def layout(self):
+        cmake_layout(self)
+
+    def source(self):
+        get(self, **self.conan_data["sources"][self.version], strip_root=True)
+
+    def generate(self):
+        tc = CMakeToolchain(self)
         armOnly = False
         if self.settings.os == "Linux":
             # Need to manually set this, as the CMake project has no 'conan_setup' step
-            cmake.definitions['CMAKE_POSITION_INDEPENDENT_CODE'] = self.options.fPIC
+            tc.variables['CMAKE_POSITION_INDEPENDENT_CODE'] = bool(self.options.fPIC)
             if self.settings.arch == "armv7hf":
                 armOnly = True
-                cmake.definitions["NE10_LINUX_TARGET_ARCH"] = "armv7"
-                cmake.definitions["CMAKE_SYSTEM_PROCESSOR"] = "arm"
+                tc.variables["NE10_LINUX_TARGET_ARCH"] = "armv7"
+                tc.variables["CMAKE_SYSTEM_PROCESSOR"] = "arm"
             elif self.settings.arch == "armv8":
                 armOnly = True
-                cmake.definitions["NE10_LINUX_TARGET_ARCH"] = "aarch64"
-                cmake.definitions["CMAKE_SYSTEM_PROCESSOR"] = "arm"
+                tc.variables["NE10_LINUX_TARGET_ARCH"] = "aarch64"
+                tc.variables["CMAKE_SYSTEM_PROCESSOR"] = "arm"
 
-        cmake.definitions["GNULINUX_PLATFORM"] = True
-        cmake.definitions["NE10_BUILD_ARM_ONLY"] = armOnly
-        cmake.definitions["NE10_BUILD_SHARED"] = self.options.shared
-        cmake.definitions["NE10_BUILD_STATIC"] = not self.options.shared
-        cmake.configure()
-        return cmake
+        tc.variables["GNULINUX_PLATFORM"] = True
+        tc.variables["NE10_BUILD_ARM_ONLY"] = armOnly
+        tc.variables["NE10_BUILD_SHARED"] = bool(self.options.shared)
+        tc.variables["NE10_BUILD_STATIC"] = not self.options.shared
+        tc.generate()
 
-    def source(self):
-        tools.get(**self.conan_data["sources"][self.version], destination=".", strip_root=True)
-        tools.patch(patch_file="patches/01-build-c-only.patch")
-        tools.patch(patch_file="patches/02-increase-cpuinfo-buffer-size.patch")
+        deps = CMakeDeps(self)
+        deps.generate()
 
     def build(self):
-        cmake = self._configure_cmake()
+        apply_conandata_patches(self)
+        cmake = CMake(self)
+        cmake.configure()
         cmake.build()
 
     def package(self):
-        cmake = self._configure_cmake()
+        cmake = CMake(self)
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)
-        self.cpp_info.includedirs.append(os.path.join("include", "ne10"))
+        self.cpp_info.libs = collect_libs(self)
+        self.cpp_info.includedirs.append(str(Path("include")/"ne10"))
         self.output.info(f"libdirs {self.cpp_info.libdirs}")
         self.output.info(f"libs: {self.cpp_info.libs}")
         self.output.info(f"includedirs: {self.cpp_info.includedirs}")
