@@ -5,30 +5,22 @@ from conans import ConanFile, AutoToolsBuildEnvironment, tools
 
 SOURCE_SUBFOLDER = "sources"
 
+# TODO: switch to https://github.com/conan-io/conan-center-index/blob/master/recipes/libgpiod once it supports v1.2.1
 
 class LibgpiodConan(ConanFile):
     name = "libgpiod"
     version = "1.2.1"
     license = "LGPL-2.1-or-later"
     homepage = "https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git"
-    url = "https://github.com/jens-totemic/conan-libgpiod"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/libgpiod"
     description = "Library for interacting with the linux GPIO character device"
     topics = ["gpio"]
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
 
-    # def source(self):
-    #     git = tools.Git(folder="libgpiod")
-    #     git.clone("https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git", "v" + self.version)
-
     def source(self):
-        release_name = f"{self.name}-{self.version}"
-        download_url = f"{self.homepage}/snapshot/{release_name}.tar.gz"
-        sha = "3a8578bd5257e36d0e69d0272bb2e7a8816ae103b2321648f011a52519499d3e"
-
-        tools.get(download_url, sha256=sha)
-        os.rename(release_name, SOURCE_SUBFOLDER)
+        tools.get(**self.conan_data["sources"][self.version], destination=SOURCE_SUBFOLDER, strip_root=True)
 
     def build_requirements(self):
         if self.settings.os == "Linux":
@@ -81,3 +73,7 @@ class LibgpiodConan(ConanFile):
     def package_info(self):
         if self.settings.os == "Linux":
             self.cpp_info.libs = ["gpiodcxx", "gpiod"]
+
+        self.output.info(f"libdirs {self.cpp_info.libdirs}")
+        self.output.info(f"libs: {self.cpp_info.libs}")
+        self.output.info(f"includedirs: {self.cpp_info.includedirs}")
