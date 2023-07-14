@@ -1,13 +1,15 @@
-import os
-from conans import AutoToolsBuildEnvironment, CMake, ConanFile, tools
-from conans.errors import ConanInvalidConfiguration
+from conan import ConanFile
+from conan.tools.files import copy, download, unzip
+from pathlib import Path
 
+required_conan_version = ">=1.53.0"
 
 class SpeechSDKConan(ConanFile):
     name = "SpeechSDK"
     version = "1.26.0"
     description = "Microsoft Speech SDK library"
     homepage = "https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/speechsdk"
     license = "Microsoft"
     settings = "os", "arch"
 
@@ -38,43 +40,43 @@ class SpeechSDKConan(ConanFile):
         if self.settings.os == "Linux" and self.translate_arch():
             filename = f"{self.main_dir()}.tar.gz"
             url = f"https://csspeechstorage.blob.core.windows.net/drop/{self.version}/{filename}"
-            tools.download(url, filename)
-            tools.unzip(filename)
+            download(self, url, filename)
+            unzip(self, filename)
 
         elif self.settings.os == "Macos":
             filename_osx = f"{self.main_dir()}.zip"
             url_osx = f"https://csspeechstorage.blob.core.windows.net/drop/{self.version}/{filename_osx}"
-            tools.download(url_osx, filename_osx)
-            tools.unzip(filename_osx)            
+            download(self, url_osx, filename_osx)
+            unzip(self, filename_osx)            
 
             # we extract the OSX libraries from the Java library, since the regular version only contains a framework bundle
             url_java = f"https://search.maven.org/remotecontent?filepath=com/microsoft/cognitiveservices/speech/client-sdk/{self.version}/client-sdk-{self.version}.jar"
             filename_java = f"SpeechSDK-Java.zip"
-            tools.download(url_java, filename_java)
-            tools.unzip(filename_java)
+            download(self, url_java, filename_java)
+            unzip(self, filename_java)
         else:
             raise Exception("Binary does not exist for these settings")
 
 
     def package(self):
-        self.copy(pattern="*.txt", src=f"{self.main_dir()}", symlinks=True)
-        self.copy(pattern="*.md", src=f"{self.main_dir()}", symlinks=True)
+        copy(self, "*.txt", src=Path(self.build_folder)/self.main_dir(), dst=self.package_folder)
+        copy(self, "*.md", src=Path(self.build_folder)/self.main_dir(), dst=self.package_folder)
         if self.settings.os == "Linux":
-            self.copy(pattern="*", dst="include", src=f"{self.main_dir()}/include", symlinks=True)
-            self.copy(pattern="*", dst="lib", src=f"{self.main_dir()}/lib/{self.translate_arch()}", symlinks=True)
+            copy(self, "*", src=Path(self.build_folder)/self.main_dir()/"include", dst=Path(self.package_folder)/"include")
+            copy(self, "*", src=Path(self.build_folder)/self.main_dir()/"lib"/self.translate_arch(), dst=Path(self.package_folder)/"lib")
         elif self.settings.os == "Macos":
             headers_dir="MicrosoftCognitiveServicesSpeech.xcframework/macos-arm64_x86_64/MicrosoftCognitiveServicesSpeech.framework/Versions/A/Headers"
-            self.copy(pattern="*api_cxx*.h", dst="include/cxx_api", src=headers_dir, symlinks=True)
-            self.copy(pattern="*", excludes="*api_cxx*.h", dst="include/c_api", src=headers_dir, symlinks=True)
+            copy(self, "*api_cxx*.h", src=Path(self.build_folder)/headers_dir, dst=Path(self.package_folder)/"include"/"cxx_api")
+            copy(self, "*", excludes="*api_cxx*.h", src=Path(self.build_folder)/headers_dir, dst=Path(self.package_folder)/"include"/"c_api")
             # extract the OSX libraries from the Java. But don't copy the Java bindings
-            self.copy(pattern="*", dst="lib", src=f"ASSETS/osx-{self.translate_arch()}", excludes="*java*", symlinks=True)
+            copy(self, "*", excludes="*java*", src=Path(self.build_folder)/"ASSETS"/f"osx-{self.translate_arch()}", dst=Path(self.package_folder)/"lib")
 
     def package_info(self):
         self.cpp_info.libs = ["Microsoft.CognitiveServices.Speech.core"]
         self.cpp_info.includedirs = [
             'include',
-            os.path.join('include', 'c_api'),
-            os.path.join('include', 'cxx_api'),
+            str(Path('include')/'c_api'),
+            str(Path('include')/'cxx_api'),
         ]
 
         if self.settings.os == "Linux":
