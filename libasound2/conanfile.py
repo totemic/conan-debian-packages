@@ -1,11 +1,5 @@
 from conan import ConanFile
-from conan.errors import ConanInvalidConfiguration
-from conan.tools.apple import is_apple_os
-from conan.tools.cmake import cmake_layout, CMake, CMakeDeps, CMakeToolchain
-from conan.tools.layout import basic_layout
-from conan.tools.gnu import PkgConfig
-from conan.tools.files import get, copy, export_conandata_patches, apply_conandata_patches, rmdir, rm
-
+from conan.tools.files import copy
 from pathlib import Path
 
 try:
@@ -15,6 +9,8 @@ try:
 except ImportError:
     pass 
 
+required_conan_version = ">=1.53.0"
+
 class DebianDependencyConan(ConanFile):
     name = "libasound2"
     version = "1.1.8"
@@ -22,7 +18,7 @@ class DebianDependencyConan(ConanFile):
     homepage = "https://packages.debian.org/buster/libasound2"
     # dev_url = https://packages.debian.org/buster/libasound2-dev
     description = "shared library for ALSA applications -- development files. This package contains files required for developing software that makes use of libasound2, the ALSA library."
-    url = "https://github.com/totemic/conan-package-recipes/tree/main/libasound2"    
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/libasound2"
     license = "GNU Lesser General Public License"
     settings = "os", "arch"
     exports = ["../debiantools.py"]

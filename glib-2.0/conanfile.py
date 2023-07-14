@@ -10,6 +10,8 @@ try:
 except ImportError:
     pass 
 
+required_conan_version = ">=1.53.0"
+
 class DebianDependencyConan(ConanFile):
     name = "glib-2.0"
     version = "2.56.4"
@@ -17,7 +19,7 @@ class DebianDependencyConan(ConanFile):
     homepage = "https://packages.ubuntu.com/bionic-updates/libglib2.0-0"
     # dev_url = https://packages.ubuntu.com/bionic-updates/libglib2.0-dev
     description = "Systemd is a suite of basic building blocks for a Linux system. It provides a system and service manager that runs as PID 1 and starts the rest of the system."
-    url = "https://github.com/totemic/conan-package-recipes/tree/main/glib-2.0"    
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/glib-2.0"
     license = "LGPL"
     settings = "os", "arch"
     exports = ["../debiantools.py"]
