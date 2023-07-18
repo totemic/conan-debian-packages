@@ -5,11 +5,11 @@ from conan.tools.files import get
 required_conan_version = ">=1.53.0"
 
 class DSPFiltersRecipe(ConanFile):
-    name = "DSPFilters"
+    name = "dsp-filters"
     version = "cci.20170309"
     homepage = "https://github.com/vinniefalco/DSPFilters"
     description = "A Collection of Useful C++ Classes for Digital Signal Processing"
-    url = "https://github.com/totemic/conan-package-recipes/tree/main/DSPFilters"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/dsp-filters"
     license = "MIT"
     settings = "os", "arch", "compiler", "build_type"
 

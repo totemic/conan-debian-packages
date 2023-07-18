@@ -5,11 +5,11 @@ from pathlib import Path
 required_conan_version = ">=1.53.0"
 
 class SpeechSDKConan(ConanFile):
-    name = "SpeechSDK"
+    name = "speech-sdk"
     version = "1.26.0"
     description = "Microsoft Speech SDK library"
     homepage = "https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/"
-    url = "https://github.com/totemic/conan-package-recipes/tree/main/speechsdk"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/speech-sdk"
     license = "Microsoft"
     settings = "os", "arch"
 

@@ -7,11 +7,11 @@ from pathlib import Path
 required_conan_version = ">=1.53.0"
 
 class Ne10Conan(ConanFile):
-    name = "Ne10"
+    name = "ne-10"
     version = "1.2.2-2020.04.08"  # version number rarely changes, so add date
     homepage = "https://github.com/projectNe10/Ne10"
     description = "An open optimized software library project for the ARM® Architecture."
-    url = "https://github.com/totemic/conan-package-recipes/tree/main/Ne10"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/ne-10"
     license = 'BSD-3-Clause'
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False],
