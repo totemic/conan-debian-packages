@@ -1,0 +1,9 @@
+sources:
+  "1.2.2-2020.04.08":
+    url: 
+      - "https://github.com/projectNe10/Ne10/archive/1f059a764d0e1bc2481c0055c0e71538470baa83.tar.gz"
+    sha256: "faf28b2555105224eb76968bad555f7df32cb5b5580b40ed974bbaa2e997f480"
+patches:
+  "1.2.2-2020.04.08":
+    - patch_file: "patches/01-build-c-only.patch"
+    - patch_file: "patches/02-increase-cpuinfo-buffer-size.patch"

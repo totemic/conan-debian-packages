@@ -1,14 +1,16 @@
-import os
-from conans import ConanFile, CMake, tools
+from conan import ConanFile
+from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
+from conan.tools.files import apply_conandata_patches, export_conandata_patches, get
 
+required_conan_version = ">=1.53.0"
 
-class PahocConan(ConanFile):
+class FlatbuffersConan(ConanFile):
     name = "flatbuffers-c"
     version = "0.6.1"
     license = "Apache License 2.0"
     homepage = "https://github.com/dvidelabs/flatcc"
     description = "FlatBuffers Compiler and Library in C for C"
-    url = "https://github.com/jens-totemic/conan-flatbuffers-c"
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/flatbuffers-c"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False],
                "fPIC": [True, False],
@@ -16,51 +18,55 @@ class PahocConan(ConanFile):
                "tests": [True, False],
                "reflection": [True, False]}
     default_options = {"shared": False, "fPIC": True, "runtimeOnly": True, "tests": False, "reflection": False}
-    exports_sources = ["01-RemoveDebugPostfix.diff"]
-    generators = "cmake"
 
-    scm = {
-        "type": "git",
-        #"subfolder": source_subfolder,
-        "url": "https://github.com/dvidelabs/flatcc.git",
-        "revision": "v" + version
-    }
+    def export_sources(self):
+        export_conandata_patches(self)
 
     def config_options(self):
         if self.settings.os == "Windows":
-            del self.options.fPIC
+            self.options.rm_safe("fPIC")
 
-    def _configure_cmake(self):
-        cmake = CMake(self)
-        cmake.definitions["FLATCC_RTONLY"] = self.options.runtimeOnly
-        cmake.definitions["FLATCC_INSTALL"] = True
-        cmake.definitions["FLATCC_TEST"] = self.options.tests
-        cmake.definitions["FLATCC_REFLECTION"] = self.options.reflection
-        cmake.definitions["BUILD_SHARED_LIBS"] = self.options.shared
-        # TODO: this setting was needed since CLang generated a warning in v 0.6.1. 
-        # Check if this can be removed in future versions again 
-        cmake.definitions["FLATCC_ALLOW_WERROR"] = False
-        #cmake.configure(source_folder=self._source_subfolder)
-        cmake.configure()
-        return cmake
+    def layout(self):
+        cmake_layout(self)
 
     def source(self):
-        # Run patch that removes the "_d" prefix from libraries and compiler. 
-        # We don't need it as each version has it's own conan package anyway 
-        tools.patch(patch_file="01-RemoveDebugPostfix.diff")
+        get(self, **self.conan_data["sources"][self.version], strip_root=True)
+
+    def generate(self):
+        tc = CMakeToolchain(self)
+        # According to https://github.com/conan-io/conan/issues/11937#issuecomment-1224038952
+        # we need to define all cmake variables as "cached" that are defined in the CMakeLists.txt file
+        # before the call to "project()"
+        tc.cache_variables["FLATCC_TEST"] = bool(self.options.tests)
+        # these variables are defined after project() in the CMakeLists.txt file
+        tc.variables["FLATCC_RTONLY"] = bool(self.options.runtimeOnly)
+        tc.variables["FLATCC_INSTALL"] = True
+        tc.variables["FLATCC_REFLECTION"] = bool(self.options.reflection)
+        tc.variables["BUILD_SHARED_LIBS"] = self.options.shared
+        # TODO: this setting was needed since CLang generated a warning in v 0.6.1. 
+        # Check if this can be removed in future versions again 
+        tc.variables["FLATCC_ALLOW_WERROR"] = False
+        tc.generate()
+
+        deps = CMakeDeps(self)
+        deps.generate()
 
     def build(self):
-        cmake = self._configure_cmake()
+        # Run patch that removes the "_d" prefix from libraries and compiler. 
+        # We don't need it as each version has it's own conan package anyway 
+        apply_conandata_patches(self)
+        cmake = CMake(self)
+        cmake.configure()
         cmake.build()
 
     def package(self):
-#         self.copy("epl-v10", src=self._source_subfolder, dst="licenses", keep_path=False)
-#         self.copy("notice.html", src=self._source_subfolder, dst="licenses", keep_path=False)
-        cmake = self._configure_cmake()
+        cmake = CMake(self)
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = ['flatccrt']
-        self.output.info("lib_paths %s" % self.cpp_info.lib_paths)
-        self.output.info("libs: %s" % self.cpp_info.libs)
-        self.output.info("include_paths: %s" % self.cpp_info.include_paths)
+        #self.cpp_info.libdirs = ["lib"]
+        self.cpp_info.libs = ["flatccrt"]
+        #self.cpp_info.includedirs = ["include"]
+        self.output.info(f"libdirs {self.cpp_info.libdirs}")
+        self.output.info(f"libs: {self.cpp_info.libs}")
+        self.output.info(f"includedirs: {self.cpp_info.includedirs}")

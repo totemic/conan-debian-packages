@@ -1,0 +1,9 @@
+sources:
+  "3.3.3":
+    url: 
+      - "https://github.com/MicrochipTech/cryptoauthlib/archive/refs/tags/v3.3.3.tar.gz"
+    sha256: "64252475b1d4c2c7152254758fa15e00c72992e6f3c202c86df7ad88a9fe962b"
+patches:
+  "3.3.3":
+    - patch_file: "patches/3.3.3_01-support-osx.diff"
+    - patch_file: "patches/3.3.3_02-fix-install-location.diff"

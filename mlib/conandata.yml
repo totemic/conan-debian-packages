@@ -1,0 +1,5 @@
+sources:
+  "0.7.0":
+    url: 
+      - "https://github.com/P-p-H-d/mlib/archive/refs/tags/V0.7.0.tar.gz"
+    sha256: "d67f9ed65705bb242e14f8ff47682b89f7c6f1cbd11dec52d4fdf7e752e4edeb"

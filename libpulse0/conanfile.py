@@ -1,12 +1,18 @@
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.files import copy
 import os
-from conans import ConanFile, tools
+from pathlib import Path
+
 try:
     # we can only use this file when running conan install. When exporting this recipe, the file does not yet exist
     # since it's in a different location and conan fails. In order to handle this, we need to catch this here
-    from debiantools import copy_cleaned, download_extract_deb, translate_arch, triplet_name
+    from debiantools import download_extract_deb, translate_arch, triplet_name
 except ImportError:
     pass 
 
+
+required_conan_version = ">=1.53.0"
 
 class DebianDependencyConan(ConanFile):
     name = "libpulse0"
@@ -15,7 +21,7 @@ class DebianDependencyConan(ConanFile):
     homepage = "https://packages.debian.org/buster/libpulse0"
     # dev_url = https://packages.debian.org/buster/libpulse-dev
     description = "PulseAudio client development headers and libraries"
-    url = "https://github.com/totemic/conan-package-recipes/libpulse"    
+    url = "https://github.com/totemic/conan-package-recipes/tree/main/libpulse0"
     license = "GNU Lesser General Public License"
     settings = "os", "arch"
     exports = ["../debiantools.py"]
@@ -50,27 +56,17 @@ class DebianDependencyConan(ConanFile):
         os.remove(mainloop_glib_so_path)
 
     def package(self):
-        self.copy(pattern="*", dst="lib", src="usr/lib/" + triplet_name(self), symlinks=True)
-        self.copy(pattern="*", dst="include", src="usr/include", symlinks=True)
-        self.copy(pattern="copyright", src="usr/share/doc/" + self.name, symlinks=True)
+        copy(self, "*", src=Path(self.build_folder)/"usr"/"lib"/triplet_name(self), dst=Path(self.package_folder)/"lib")
+        copy(self, "*", src=Path(self.build_folder)/"usr"/"include", dst=Path(self.package_folder)/"include")
+        copy(self, "copyright", src=Path(self.build_folder)/"usr"/"share"/"doc"/self.name, dst=self.package_folder)
 
     def package_info(self):
-        pkgpath =  "lib/pkgconfig"
-        pkgconfigpath = os.path.join(self.package_folder, pkgpath)
-        self.output.info("package info file: " + pkgconfigpath)
-        with tools.environment_append({'PKG_CONFIG_PATH': pkgconfigpath}):
-            pkg_config = tools.PkgConfig("libpulse-simple", variables={ "prefix" : self.package_folder } )
-
-            copy_cleaned(pkg_config.libs_only_L, "-L", self.cpp_info.lib_paths)
-            # need to add a library in field Libs.private of pkg-config
-            self.cpp_info.lib_paths.append(os.path.join(self.package_folder, "lib/pulseaudio"))
-            self.output.info("lib_paths %s" % self.cpp_info.lib_paths)
-
-            # exclude all libraries from dependencies here, they are separately included
-            copy_cleaned(pkg_config.libs_only_l, "-l", self.cpp_info.libs)
-            # need to add a library in field Libs.private of pkg-config
-            self.cpp_info.libs.append("pulsecommon-%s" % self.version)
-            self.output.info("libs: %s" % self.cpp_info.libs)
-
-            copy_cleaned(pkg_config.cflags_only_I, "-I", self.cpp_info.include_paths)
-            self.output.info("include_paths: %s" % self.cpp_info.include_paths)
+        if self.settings.os == "Linux":
+            # need to add a library path from field Libs.private of pkg-config
+            self.cpp_info.libdirs = ["lib", "lib/pulseaudio"]
+            # need to also add the pulsecommon library from field Libs.private of pkg-config
+            self.cpp_info.libs = ['pulse-simple', 'pulse', f'pulsecommon-{self.version}']
+            #self.cpp_info.includedirs = ["include"]
+            self.output.info(f"libdirs {self.cpp_info.libdirs}")
+            self.output.info(f"libs: {self.cpp_info.libs}")
+            self.output.info(f"includedirs: {self.cpp_info.includedirs}")
