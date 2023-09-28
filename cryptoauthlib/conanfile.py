@@ -11,7 +11,7 @@ required_conan_version = ">=1.53.0"
 
 class CryptoAuthLib(ConanFile):
     name = 'cryptoauthlib'
-    version = '3.3.3'
+    version = '3.7.0'
     license = 'MIT'
     url = "https://github.com/totemic/conan-package-recipes/tree/main/cryptoauthlib"
     homepage = 'https://github.com/MicrochipTech/cryptoauthlib'
@@ -72,9 +72,11 @@ class CryptoAuthLib(ConanFile):
         tc.variables["ATCA_HAL_I2C"] = bool(self.options.halI2C)
         tc.variables["ATCA_HAL_CUSTOM"] = bool(self.options.halCustom)
         tc.variables["ATCA_PRINTF"] = bool(self.options.debugOutput)
+        tc.variables["ATCA_JWT_EN"] = True
         tc.variables["ATCA_PKCS11"] = bool(self.options.pkcs11)
         tc.variables["ATCA_MBEDTLS"] = bool(self.options.mbedtls)
         tc.variables["PKCS11_DEBUG_ENABLE"] = bool(self.options.debugOutputPkcs11)
+        tc.variables["ATCA_STRICT_C99"] = True
         tc.generate()
 
         deps = CMakeDeps(self)

@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a0a8cb68..a78b6ea1 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -16,8 +16,6 @@ else()
+ set(SETUP_INSTALLER OFF CACHE INTERNAL "Disabling installation on this platform")
+ endif()
+ 
+-# Default install root which is normally /usr/local/
+-set(CMAKE_INSTALL_PREFIX "/" CACHE INTERNAL "")
+ 
+ # If including certificate definitions into the library then include them as ATCACERT_DEF_SRC
+ #file(GLOB ATCACERT_DEF_SRC ABSOLUTE "app/*.c")

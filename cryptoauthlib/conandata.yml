@@ -1,9 +1,24 @@
 sources:
+  "3.7.0":
+    url: 
+      - "https://github.com/MicrochipTech/cryptoauthlib/archive/refs/tags/v3.7.0.tar.gz"
+    sha256: "a480dfde224b76e9d976eb1342cfefdffbd428b8364d3434884937d0ca52ecde"
+  "3.6.1":
+    url: 
+      - "https://github.com/MicrochipTech/cryptoauthlib/archive/refs/tags/v3.6.1.tar.gz"
+    sha256: "3f1e3fc632df3b67e23d8f54b6d83e184c92624437f1486b53b55a2e86611fba"
+  "3.5.1":
+    url: 
+      - "https://github.com/MicrochipTech/cryptoauthlib/archive/refs/tags/v3.5.1.tar.gz"
+    sha256: "ac4eb00342a129f0b49a2166e715df27b4608cabc370e5ed2f68f4a0739063d2"
   "3.3.3":
     url: 
       - "https://github.com/MicrochipTech/cryptoauthlib/archive/refs/tags/v3.3.3.tar.gz"
     sha256: "64252475b1d4c2c7152254758fa15e00c72992e6f3c202c86df7ad88a9fe962b"
 patches:
+  "3.7.0":
+    - patch_file: "patches/3.7.0_01-support-osx.diff"
+    - patch_file: "patches/3.7.0_02-fix-install-location.diff"
   "3.3.3":
     - patch_file: "patches/3.3.3_01-support-osx.diff"
     - patch_file: "patches/3.3.3_02-fix-install-location.diff"

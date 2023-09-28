@@ -1,0 +1,25 @@
+diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
+index 6d692e51..f9257f99 100644
+--- a/lib/CMakeLists.txt
++++ b/lib/CMakeLists.txt
+@@ -175,6 +175,7 @@ set(CRYPTOAUTH_SRC ${CRYPTOAUTH_SRC} hal/hal_windows.c)
+ set(HID_SRC ../third_party/hidapi/windows/hid.c)
+ elseif(APPLE)
+ set(CRYPTOAUTH_SRC ${CRYPTOAUTH_SRC} hal/hal_linux.c)
++set(TWI_SRC hal/hal_osx_i2c_userspace.c)
+ set(HID_SRC ../third_party/hidapi/mac/hid.c)
+ elseif(UNIX)
+ set(CRYPTOAUTH_SRC ${CRYPTOAUTH_SRC} hal/hal_linux.c)
+diff --git a/lib/hal/hal_linux.c b/lib/hal/hal_linux.c
+index 7ae457e2..908d75e4 100644
+--- a/lib/hal/hal_linux.c
++++ b/lib/hal/hal_linux.c
+@@ -289,7 +289,7 @@ ATCA_STATUS hal_unlock_mutex(void *pMutex)
+  * \param[in,out] ppMutex location to receive ptr to mutex
+  * \param[in,out] pName String used to identify the mutex
+  */
+-ATCA_STATUS hal_create_mutex(void ** ppMutex, char* pName)
++ATCA_STATUS hal_create_mutex(void ** ppMutex, const char* pName)
+ {
+     sem_t * sem;
+ 
