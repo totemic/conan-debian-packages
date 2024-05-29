@@ -24,4 +24,4 @@ https://search.maven.org/remotecontent?filepath=com/microsoft/cognitiveservices/
 
 for code understanding: https://github.com/Microsoft/cognitive-services-speech-sdk-js
 
-conan install speech-sdk/1.33.0@totemic/stable -s os=Linux --build=speech-sdk
+conan install speech-sdk/1.35.0@totemic/stable -s os=Linux --build=speech-sdk
