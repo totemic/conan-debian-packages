@@ -6,7 +6,7 @@ required_conan_version = ">=1.53.0"
 
 class SpeechSDKConan(ConanFile):
     name = "speech-sdk"
-    version = "1.35.0"
+    version = "1.37.0"
     description = "Microsoft Speech SDK library"
     homepage = "https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/"
     url = "https://github.com/totemic/conan-package-recipes/tree/main/speech-sdk"
