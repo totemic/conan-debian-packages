@@ -5,7 +5,7 @@ from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import cross_building
 from conan.tools.env import VirtualBuildEnv, VirtualRunEnv
-from conan.tools.files import get, copy
+from conan.tools.files import get, copy, patch
 from conan.tools.gnu import Autotools, AutotoolsDeps, AutotoolsToolchain, PkgConfigDeps
 from conan.tools.layout import basic_layout
 import os
@@ -15,7 +15,7 @@ required_conan_version = ">=1.53.0"
 
 class LibOSTreeConan(ConanFile):
     name = "libostree"
-    version = "2022.1"
+    version = "2022.1-01"
     settings = "os", "compiler", "build_type", "arch"
     topics = ("conan", "libostree", "ostree")
     options = {"shared": [True, False], "fPIC": [True, False]}
@@ -25,6 +25,7 @@ class LibOSTreeConan(ConanFile):
     license = "LGPLv2+"
     description = "libostree is both a shared library and suite of command line tools that combines a git-like model for committing and downloading bootable filesystem trees, along with a layer for deploying them and managing the bootloader configuration"
     _source_subfolder = "source_subfolder"
+    exports_sources = ["0001-ostree-pull-set-request-timeout.patch"]
     #exports = ["LICENSE.md"]
 
     def layout(self):
@@ -77,7 +78,10 @@ class LibOSTreeConan(ConanFile):
         return package
 
     def source(self):
-        get(self, **self.conan_data["sources"][self.version], strip_root=True)
+        get(self, **self.conan_data["sources"]["2022.1"], strip_root=True)
+        patch_file = os.path.join(self.export_sources_folder, "0001-ostree-pull-set-request-timeout.patch")
+        patch(self, patch_file=patch_file)
+        
 
     def generate(self):
         if self.settings.os != "Linux":
@@ -101,7 +105,7 @@ class LibOSTreeConan(ConanFile):
             # --with-libarchive 
             # --with-grub2
             # --with-grub2-mkconfig-path=/usr/sbin/grub-mkconfig
-            "--with-selinux",
+            "--without-selinux",
             "--with-libsystemd",
             "--with-systemdsystemunitdir=${libdir}/systemd/system",
             "--with-systemdsystemgeneratordir=${libdir}/systemd/system-generators", 
